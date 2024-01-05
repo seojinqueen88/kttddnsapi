@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kttddnsapi.dao.SelfasDao">
+
+	<insert id="insertSelfas" parameterType="selfas">
+		insert into self_as (mac, certnum, user_level) values (#{mac}, #{certnum}, #{user_level})
+	</insert>
+
+	<update id="updateSelfasCertnum" parameterType="selfas">
+		update self_as set certnum=#{certnum}, certnum_create_time=now() where mac=#{mac} and user_level=#{user_level}
+	</update>
+
+	<delete id="deleteSelfasWhereMac" parameterType="String">
+		delete from self_as where mac = #{mac}
+	</delete>
+	<delete id="deleteSelfasWhereMacUserlevel" parameterType="map">
+		delete from self_as where mac = #{mac} and user_level = #{user_level}
+	</delete>
+	<select id="selectSelfasWhereMacAndUserlevel" parameterType="map" resultType="selfas">
+		select * from self_as where mac = #{mac} and user_level = #{user_level}
+	</select>
+	<select id="selectSelfasWhereMacAndUserlevelCms" parameterType="map" resultType="selfas">
+		select * from self_as where mac = #{mac} and user_level = #{user_level}
+	</select>
+	<select id="selectSelfasWhereMacAndUserlevelCmsCertnum" parameterType="map" resultType="String">
+		select certnum from self_as where mac = #{mac} and user_level = #{user_level}
+	</select>
+	<select id="selectSelfasWhereMac" parameterType="String" resultType="selfas">
+		select * from self_as where mac = #{mac}
+	</select>
+
+</mapper>

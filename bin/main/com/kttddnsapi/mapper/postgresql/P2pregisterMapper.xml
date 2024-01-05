@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kttddnsapi.dao.P2pregisterDao">
+
+	<insert id="insertP2pregister" parameterType="p2pregister">
+		insert into p2p_register (mac, p2p_uid, p2p_priority) values (#{mac}, #{p2p_uid}, #{p2p_priority})
+	</insert>
+
+	<update id="updateP2pregister" parameterType="p2pregister">
+		update p2p_register set p2p_priority=#{p2p_priority} where mac=#{mac}
+	</update>
+
+	<select id="selectP2pregisterWhereMac" parameterType="String" resultType="p2pregister">
+		select * from p2p_register where mac = #{mac}
+	</select>
+
+	<select id="selectP2pregisterInMac" parameterType="String" resultType="p2pregister">
+		select * from p2p_register where mac in (${macStrings})
+	</select>
+
+</mapper>

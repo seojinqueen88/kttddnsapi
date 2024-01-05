@@ -1,0 +1,14 @@
+JAVA VERSION (OPEN JDK) 1.8.0_191
+ - Spring Boot 와 동일 버전 사용 (버전이 다를 경우 초기화 에러 발생)
+ - 생성된 라이브러리 명은 system.load()에 인자값과 동일
+
+gcc -fPIC -I /usr/local/jdk1.8.0_171/include/ -I /usr/local/jdk1.8.0_171/include/linux/  -c c_encryption.c
+또는 
+gcc -fPIC -I /usr/local/jdk1.8.0_191/include/ -I /usr/local/jdk1.8.0_191/include/linux/  -c c_encryption.c
+ gcc -shared -o libcmake.lib c_encryption.o
+
+복사 (/usr/lib)
+ cp ./libcmake.lib /usr/lib/libcmakeInstantPasswd.so
+ cp ./libcmake.lib /usr/local/lib/libcmakeInstantPasswd.so
+
+Sprint boot WEB 설치 전 사전 설치 및 톰캣 재기동

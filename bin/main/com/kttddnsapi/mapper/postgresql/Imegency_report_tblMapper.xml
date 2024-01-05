@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.kttddnsapi.dao.ImergencyReportDao">
+
+	<insert id="insertImergenyReport" parameterType="ImergencyReport">
+	<choose>
+	<when test="im_evt_body !=null and log_dump != null">
+		INSERT INTO imergency_report_tbl (mac, im_evt_type,im_evt_body,log_dump) VALUES (#{mac}, #{im_evt_type}, #{im_evt_body},#{log_dump});
+	</when>
+	<when test="im_evt_body == null and log_dump != null">
+		INSERT INTO imergency_report_tbl (mac, im_evt_type,im_evt_body,log_dump) VALUES (#{mac}, #{im_evt_type}, '',#{log_dump});
+	</when>
+    <when test="im_evt_body !=null and log_dump == null">
+		INSERT INTO imergency_report_tbl (mac, im_evt_type,im_evt_body) VALUES (#{mac}, #{im_evt_type}, #{im_evt_body});
+	</when>
+		<otherwise>
+			INSERT INTO imergency_report_tbl (mac, im_evt_type) VALUES (#{mac}, #{im_evt_type});
+		</otherwise>
+	</choose>
+	</insert>
+
+<select id="selectImergencyRepory" parameterType="map" resultType="ImergencyReport">
+ 
+<choose>
+<when test="search_day != null and !search_day.equals('')">
+select * from imergency_report_tbl where date::date IN(search_day);
+</when>
+<when test="all_search_day != null and search_day.equals('all_search_day')">
+select * from imergency_report_tbl;
+</when>
+<otherwise>
+ select * from imergency_report_tbl where date::date = now()::date;
+</otherwise>
+</choose>
+ 
+</select>
+</mapper>

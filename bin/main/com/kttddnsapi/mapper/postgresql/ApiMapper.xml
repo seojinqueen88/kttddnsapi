@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ <mapper namespace="com.kttddnsapi.dao.ApiDao"> 
+ 
+	<insert id="insertDevice" parameterType="map">
+		insert into users (status, jumin, category, empty1, service_no, register_type, employee_no) values ('GEN', #{mac}, 'DDNS', to_char(now(), 'YYYY-MM-DD HH24:MI:SS'), #{serviceNo}, #{registerType}, #{employeeNo})
+	</insert>
+
+    <update id="update_users_service_access_rule" parameterType="map">
+    <choose>
+			<when test="ADMIN_ID!=null and !ADMIN_ID.equals('')">
+			update users set access_rule = #{access_rule} ,OTP_ADMIN_ID=#{ADMIN_ID} where jumin = #{mac}
+			</when>
+			<otherwise>
+			update users set access_rule = #{access_rule} where jumin = #{mac}
+			</otherwise>
+		</choose>
+		
+	</update>
+	
+	
+	<select  id="updateAppStaistics" parameterType="java.util.HashMap" 
+	 resultType="String">
+	with update_step as( 
+	insert into app_statistics(jumin, app_name, app_type)  
+	select jumin ,(select '${app_name}'::text) as app_name , (select ${app_type}::integer) as app_type  from users where
+	<foreach collection="list" item="item" separator=" or " >
+		  jumin = #{item}
+	</foreach>
+     ON CONFLICT (jumin) DO NOTHING
+     returning jumin)
+     select users.jumin from  users  , update_step where   
+	 EXISTS(select * from update_step) and update_step.jumin = users.jumin 
+<!--      select users. jumin from  users , update_step where  -->
+<!--      <foreach collection="list" item="item" separator=" or " > -->
+<!-- 		  users.jumin = #{item} -->
+<!-- 	</foreach> -->
+	</select>
+
+
+	<update id="updateDeviceServiceopenWhereMac" parameterType="String">
+		update users set service_open = 1 where jumin = #{mac} 
+<!-- 		<selectKey keyColumn="domain" keyProperty="domain" resultType="java.lang.String" order="AFTER"> -->
+<!-- 		SELECT rtrim(domain) as "fullDomain" from users where jumin = #{mac}  -->
+<!-- 		</selectKey> -->
+	</update>
+
+	<update id="updateDeviceServicenoWhereMac" parameterType="map">
+		update users set service_no = #{serviceNo}, register_type = #{registerType}, employee_no = #{employeeNo} where jumin = #{mac}
+	 
+	</update>
+
+	<update id="updateDeviceServicenoWhereInMac" parameterType="map">
+		update users set service_no = '' where jumin in (${macListString})
+<!-- 			<selectKey keyColumn="domain" keyProperty="domain" resultType="java.lang.String" order="AFTER"> -->
+<!-- 		SELECT rtrim(domain) as "fullDomain" from users where jumin = #{mac}  -->
+<!-- 		</selectKey> -->
+	</update>
+
+	<update id="updateDeviceServiceWhereInMac" parameterType="map">
+		update users set service_open = 2, service_user = 1 where jumin in (${macListString})
+	</update>
+
+	<update id="updateDeviceP2pWhereMac" parameterType="map">
+		update users set p2p_uid = #{p2pUid}, p2p_priority = #{p2pPriority}, p2p_device = 0 where jumin = #{mac}
+	</update>
+
+	<update id="updateDeviceP2pdeviceWhereMac" parameterType="String">
+		update users set p2p_device = 1 where jumin = #{mac}
+	</update>
+
+	<update id="updateUserOTP_YN" parameterType="map">
+	<![CDATA[
+	<choose>
+		<when "test=otp_yn > 3 or otp_yn < 0">
+			update users set otp_yn = 0 where jumin = #{mac}
+		</when>
+		<otherwise>
+			update users set otp_yn = #{otp_yn} where jumin = #{mac}
+		</otherwise>
+	</choose>
+	]]>
+	</update>
+
+
+	<delete id="deleteDeviceWhereSysid" parameterType="String">
+		delete from users where systemid = #{sysid}
+	</delete>
+
+	<delete id="deleteDeviceWhereDomain" parameterType="String">
+		delete from users where domain = #{domain}
+	</delete>
+
+	<delete id="deleteDeviceWhereMac" parameterType="String">
+		delete from users where jumin = #{mac}
+	</delete>
+
+	<select id="selectDeviceInSysidForDeviceinfo" parameterType="map" resultType="map">
+		select rtrim(systemid) as "sysid", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(empty1) as "updateDate" from users where systemid in (${sysidStrings})
+	</select>
+	<select id="selectDeviceWhereServicenoForOss" parameterType="String" resultType="map">
+		select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(empty1) as "updateDate" from users where service_no = #{serviceNo}
+	</select>
+
+	<select id="selectDeviceInSysidForDeviceinfo2" parameterType="map" resultType="map">
+		select rtrim(systemid) as "sysid", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, upper(replace(rtrim(jumin), ':', '')) as "macAddress" from users where systemid in (${sysidStrings})
+	</select>
+	<select id="selectDeviceWhereInServicenoForApp" parameterType="map" resultType="map">
+	<choose>
+	 <when test="selectDeviceWhereInServicenoForApp_new_version != null and selectDeviceWhereInServicenoForApp_new_version == true">
+	 WITH updated_log_call AS (
+    	update users set log_call_KTTDDNS_SERVICENO_TO_APP_DEVICEINFO = now() AT TIME ZONE 'KST'
+	where service_user != 0 and service_no in (${serviceNoListString}) RETURNING jumin)
+    select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as
+	"domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 
+	'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 
+	'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 
+	'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) =
+	'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as p2pUid, 
+	p2p_priority as "p2pPriority", upper(replace(rtrim(u.jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn",
+	service_open as "service_open" , register_type as "register_type" ,empty3  as "DeviceVer" ,rtrim(empty2) as "modelName" ,
+	 b.fw_version as "last_ver"
+	from users as u left join models b on u.empty2 = b.model  , (select  jumin from updated_log_call ) as t where u.jumin = t.jumin ORDER BY domain ASC ,otp_yn DESC ;
+		</when>
+		<otherwise>
+			select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn" from users where service_user = 1 and otp_yn != 0 and service_no in (${serviceNoListString})
+		</otherwise>
+		</choose>
+	</select>
+
+	<select id="selectDeviceInSysidForDeviceinfo3" parameterType="map" resultType="map">
+		select rtrim(systemid) as "sysid", rtrim(domain) as "fullDomain", rtrim(webport) as "webPort", rtrim(port) as "port", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(addr) as "IP", rtrim(empty2) as "modelName" from users where systemid in (${sysidStrings})
+	</select>
+	<select id="selectDeviceWhereInServicenoForCs" parameterType="map" resultType="map">
+		select service_no as "serviceNo", rtrim(domain) as "fullDomain", rtrim(webport) as "webPort", rtrim(port) as "port", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(addr) as "IP", rtrim(empty2) as "modelName" from users where service_no in (${serviceNoListString})
+	</select>
+
+	<select id="selectDeviceWhereDomain" parameterType="String" resultType="map">
+		select rtrim(domain) as "fullDomain", upper(replace(rtrim(jumin), ':', '')) as "macAddress" from users where domain = #{domain}
+	</select>
+
+		<select id="selectDeviceWhereInDomain" parameterType="map" resultType="map">
+		select rtrim(domain) as "fullDomain", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(port) as port, rtrim(webport) as webport, p2p_uid as "p2pUid", p2p_priority as "p2pPriority" from users where domain in (${domainListString})
+	</select>
+	<select id="selectDeviceWhereMac" parameterType="String" resultType="map">
+		select rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, rtrim(webport) as webport, upper(replace(rtrim(jumin), ':', '')) as "macAddress", p2p_uid as "p2pUid", p2p_priority as "p2pPriority", service_no from users where jumin = #{mac}
+	</select>
+	
+<select id="selectDevicePublicIpWhereMacWithAccessRule" parameterType="String" resultType="map">
+		select rtrim(addr) as "addr" ,access_rule as "access_rule" ,service_user as "service_user" from users where jumin = #{mac}
+	</select>
+	
+	<select id="selectDevicePublicIpWhereMac" parameterType="String" resultType="String">
+		select rtrim(addr) as "addr" from users where jumin = #{mac}
+	</select>
+	
+		<select id="selectDevicePublicIpWhereMac_accessrule" parameterType="String" resultType="String">
+		select access_rule as "access_rule"  from users where jumin = #{mac}
+	</select>
+	
+	<select id="selectDevicePublicIpWhereMac_1" parameterType="String" resultType="String">
+		<!--select rtrim(addr) as "addr" from users where jumin = #{mac} and service_open = 1 -->
+		select rtrim(addr) as "addr" from users where jumin = #{mac} and service_user = 1 
+	</select>
+
+	<select id="selectDevicePublicIpWhereMacByMap" parameterType="map" resultType="map">
+	 WITH updated_last_access_master_key_time as  (
+    	update users set last_access_master_key_time = now() AT TIME ZONE 'KST'
+		where jumin = #{mac} RETURNING jumin) 
+		select rtrim(addr) as "addr" ,access_rule as "access_rule", service_user as "service_user" 
+		 from users, (select jumin from updated_last_access_master_key_time) as t where EXISTS(	
+		 select ip_address  from white_list_ip where 
+	 	<choose>
+	 	<when test="white_ip!= null and !white_ip.equals('')">
+		<!-- 	ip_address= #{white_ip}::inet -->
+		ip_address >>= #{white_ip}::inet
+	 	</when>
+		<otherwise>
+			 ip_address='127.0.0.1'
+		</otherwise>
+		</choose>
+		)
+		<!-- 	and jumin = #{mac} and service_user = 1 -->
+			and t.jumin = users.jumin  and service_user != 0
+		<if test="check_service_open_nm != null and check_service_open_nm gte  0"> 
+		and service_open != #{check_service_open_nm}
+		</if>
+		
+	</select>
+	
+	<select id="selectDeviceWhereSysid" parameterType="map" resultType="map">
+		select rtrim(domain) as "fullDomain", rtrim(systemid) as "systemid", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(webport) as webport from users where systemid like '${sysid}%'
+	</select>
+	<select id="selectDeviceWhereServiceno" parameterType="String" resultType="map">
+		select rtrim(domain) as "fullDomain", service_no as "serviceNo", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(webport) as "webport", replace(replace(empty3, '.', ''),'V','') as "deviceVer" from users where service_no = #{serviceNo}
+	</select>
+	<select id="selectDeviceWhereServicenoCms" parameterType="String" resultType="map">
+<!-- 		select rtrim( addr) as "addr" , rtrim(domain) as "fullDomain", service_no as "serviceNo", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(port) as "port", replace(replace(empty3, '.', ''),'V','') as "deviceVer" ,empty3  as  "RawDeviceVer" from users where service_no = #{serviceNo} -->
+select rtrim( addr) as "addr" , rtrim(domain) as "fullDomain", service_no as "serviceNo", 
+upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(port) as "port",
+REGEXP_REPLACE(replace(coalesce(empty3,''), '.', ''),'[[:alpha:]]','','g')  as "deviceVer" ,empty3  as 
+"RawDeviceVer" from users where  service_no = #{serviceNo} 
+
+	</select>
+	<select id="selectDeviceWhereSysid2" parameterType="String" resultType="map">
+		select rtrim(domain) as "fullDomain", rtrim(systemid) as "systemid", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(webport) as webport from users where systemid = #{sysid}
+	</select>
+
+	<select id="selectDeviceWhereMac2" parameterType="String" resultType="map">
+		select a.service_no, a.service_open, b.sys_id, b.cust_sts from users a left join service b on a.service_no = b.service_no where a.jumin = #{mac}
+	</select>
+<!-- selectDeviceWhereMac3 , selectDeviceWhereMac3 사용 시 selectDeviceWhereMacX 뷰를 이용하도록 뷰 제공  -->
+	<select id="selectDeviceWhereMac3" parameterType="String" resultType="map">
+		select rtrim( domain) as "fullDomain", rtrim( addr) as "addr" , rtrim(jumin) as mac, service_no, service_open, register_type, employee_no from users where jumin = #{mac}
+	</select>
+
+	<select id="selectDeviceWhereMac4" parameterType="String" resultType="map">
+		select rtrim(a.domain) as "fullDomain",rtrim(a.addr) as "addr",  a.service_no, rtrim(a.empty3) as device_ver, b.fw_version as last_ver from users a left join models b on a.empty2 = b.model where a.jumin = #{mac}
+	</select>
+
+	<select id="selectDeviceWhereMac5" parameterType="String" resultType="map">
+		select rtrim(a.domain) as "fullDomain",rtrim(a.addr) as "addr",  a.service_no, rtrim(a.empty3) as device_ver, b.fw_version as last_ver from users a left join models b on a.empty2 = b.model where a.jumin = #{mac}
+	</select>
+
+
+	<select id="selectServiceCuststsWhereServiceno" parameterType="String" resultType="String">
+		select cust_sts from service where service_no = #{serviceNo}
+	</select>
+
+	<select id="selectServiceContractnoWhereServiceno" parameterType="String" resultType="String">
+		select contract_no from service where service_no = #{serviceNo}
+	</select>
+
+	<select id="selectDeviceWhereInServiceno" parameterType="map" resultType="map">
+		select a.service_no, upper(replace(rtrim(b.jumin), ':', '')) as mac, rtrim(b.empty2) as model, b.register_type, rtrim(b.empty3) as device_ver, c.fw_version as last_ver from service a left join users b on a.service_no = b.service_no left join models c on b.empty2 = c.model where a.service_no in (${serviceNoListString})
+	</select>
+	
+	<select id="selectDevicePhoneWhereInServiceno" parameterType="map" resultType="map">
+		select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone = #{phone} );
+	</select>
+	
+	<select id="selectDeviceMacWhereInServicenoPhoneOTPKttTEST" parameterType="map" resultType="map">  
+		<!-- 
+		select distinct rtrim(jumin) as mac  FROM users where service_no in (${serviceNoListString}) and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} );	
+		 -->
+		 select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and maker not like '%dahua%' and domain like '%telecopview%'and replace(jumin , ':' ,'')not in (select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} );			 	 
+	</select>
+	
+	<select id="selectDeviceMacWhereInServicenoPhoneOTP1HourKttTEST" parameterType="map" resultType="map">
+		<!-- 
+		select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );
+	-->
+			 select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and maker not like '%dahua%' and domain like '%telecopview%'and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );			 	 
+	
+	</select>
+	
+	<select id="selectDeviceOTP1HourTimeWhereInServiceno" parameterType="map" resultType="map">
+				select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone = #{phone} and NOW()-interval'1 hour' > create_time );
+	</select>
+	
+	<select id="selectDeviceWhereInServicenoOTP" parameterType="map" resultType="map">
+		select a.service_no, upper(replace(rtrim(b.jumin), ':', '')) as mac, rtrim(b.empty2) as model, b.register_type, b.otp_yn, b.access_rule, b.maker, b.last_access_master_key_time, rtrim(b.empty3) as device_ver, c.fw_version as last_ver from service a left join users b on a.service_no = b.service_no left join models c on b.empty2 = c.model where a.service_no in (${serviceNoListString})
+	</select>
+	
+	<select id="selectDeviceMAKERWhereInServiceno" parameterType="map" resultType="map">
+		select distinct rtrim(jumin) as mac , otp_yn, maker from users where service_no in (${serviceNoListString})and maker like '%RIFAT%'
+	</select>
+	
+		
+	<select id="selectDeviceWhereInMac" parameterType="map" resultType="map">
+		select service_no, register_type from users where jumin in (${macListString})
+	</select>
+
+	<select id="selectDeviceWhereInMac2" parameterType="map" resultType="map">
+		select rtrim(a.jumin) as mac, a.service_no, b.cust_sts, a.service_open from users a left join service b on a.service_no = b.service_no where a.jumin in (${macListString})
+	</select>
+
+	<select id="selectDeviceP2pWhereMac" parameterType="String" resultType="map">
+		select upper(replace(rtrim(jumin), ':', '')) as "macAddress", p2p_uid as "p2pUid", p2p_priority as "p2pPriority" from users where jumin = #{mac}
+	</select>
+
+	<select id="selectDeviceP2pWhereMac2" parameterType="String" resultType="map">
+		select p2p_uid as "p2pUid", p2p_device as "p2pDevice" from users where jumin = #{mac}
+	</select>
+
+	<select id="selectServiceWhereInServiceno" parameterType="map" resultType="map">
+		select * from service where service_no in (${serviceNoListString})
+	</select>
+	
+	<select id="selectDeviceWhereInPhone" parameterType="map" resultType="map">
+		select c.otp_yn, s.mac, s.message as ddnslog from users as c left join phone as s
+		on c.jumin = s.mac left join service as p on c.service_no = p.service_no 
+   		where c.service_no in (${serviceNoListString}) and message like '${PHONE}%'
+	</select>
+
+	<select id="selectDeviceWhereInPhone2" parameterType="map" resultType="map">
+		select c.service_no,s.mac, s.message as ddnslog from users as c left join ddnslog as s
+		on c.jumin = s.mac left join service as p on c.service_no = p.service_no 
+   		where c.service_no in (${serviceNoListString}) 
+	</select>
+			
+	<insert id="insertCheckIPValidation" parameterType="map">
+		insert into "CHECK_IP_VALIDATION"("mac_address", "LOG", "regdate", "mac","requested_ip") 
+		select 
+	#{mac}::macaddr,
+	#{log},
+	now(),
+	#{mac} ,
+	 <choose>
+		<when test="ask_ip!= null and !ask_ip.equals('')">
+				#{ask_ip}::inet
+		 </when>
+		<otherwise>
+				'0.0.0.0'::inet
+		</otherwise>
+	</choose>
+	where not exists(select * from  "white_list_ip" as w 
+	where w."ip_address" = 
+	 <choose>
+		<when test="ask_ip!= null and !ask_ip.equals('')">
+				#{ask_ip}::inet
+		 </when>
+		<otherwise>
+				'127.0.0.1'::inet
+		</otherwise>
+	</choose>
+	 )  ON CONFLICT ("requested_ip") DO UPDATE SET "count" = "CHECK_IP_VALIDATION"."count" + 1 ,  "regdate" = now(); 
+	<selectKey keyProperty="index" resultType="int" order="AFTER">
+		select count("ip_address") from "white_list_ip" where "ip_address" = 
+	 <choose>
+		<when test="ask_ip!= null and !ask_ip.equals('')">
+				#{ask_ip}::inet
+		 </when>
+		<otherwise>
+				'127.0.0.1'::inet
+		</otherwise>
+	</choose>
+	</selectKey> 
+	</insert>
+</mapper>

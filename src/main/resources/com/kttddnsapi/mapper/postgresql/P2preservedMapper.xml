@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kttddnsapi.dao.P2preservedDao">
+
+	<update id="updateP2preserved" parameterType="map">
+		update p2p_reserved set used = 1, history_mac = #{historyMac}, last_used_time = now() where p2p_uid = #{p2pUid}
+	</update>
+
+	<select id="selectP2preservedWhereHistorymac" parameterType="String" resultType="String">
+		select p2p_uid from p2p_reserved where history_mac = #{historyMac}
+	</select>
+
+	<select id="selectP2preservedWhereUsed0" resultType="String">
+		select p2p_uid from p2p_reserved where used = 0 order by p2p_uid limit 1
+	</select>
+
+</mapper>

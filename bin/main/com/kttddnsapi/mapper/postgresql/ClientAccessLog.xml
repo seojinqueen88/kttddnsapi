@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kttddnsapi.dao.ClientAccessLogDao">
+ 
+	<insert id="insert_update_ClientAccessLogTbl" parameterType="map" >
+ 	<choose>
+	 <when test="client_access_log_req_type != null and (client_access_log_req_type gte 0 and client_access_log_req_type lt 3)">
+	 	<choose>
+	 		 <when test="client_access_log_req_type ==0">
+	 		 	with update_step as( 
+ 	update "app_access" set req_date = now(), api_type =#{api_type}
+ 	where mac_address =#{mac_address} and req_id =#{req_id} and client_access_log_req_type=0
+ 	 returning *
+ 	)
+ 	insert into "app_access"(client_access_log_req_type, mac_address, req_id,api_type,req_date)  
+ 	select 0 , #{mac_address}, #{req_id} , #{api_type}, now()
+ 	where not EXISTS(select * from update_step)
+	 		 </when>
+	 	<when test="client_access_log_req_type ==1">
+	 		 	with update_step as( 
+ 	update "cms_access" set req_date = now(), api_type =#{api_type}
+ 	where mac_address =#{mac_address} and req_id =#{req_id} and client_access_log_req_type=1
+ 	 returning *
+ 	)
+ 	insert into "cms_access"(client_access_log_req_type, mac_address, req_id,api_type,req_date)  
+ 	select 1 , #{mac_address}, #{req_id} , #{api_type}, now()
+ 	where not EXISTS(select * from update_step)
+	 		 </when>
+	 		 <when test="client_access_log_req_type ==2">
+	 		 	with update_step as( 
+ 	update "device_protocol" set req_date = now(), api_type =#{api_type}
+ 	where mac_address =#{mac_address} and req_id =#{req_id} and client_access_log_req_type=2
+ 	 returning *
+ 	)
+ 	insert into "device_protocol"(client_access_log_req_type, mac_address, req_id,api_type,req_date)  
+ 	select 0 , #{mac_address}, #{req_id} , #{api_type}, now()
+ 	where not EXISTS(select * from update_step)
+	 		 </when>
+	 	</choose>
+ 	</when>
+ 	<otherwise>	
+ 	
+ 	with update_step as( 
+ 	update "CLIENT_ACCESSLOG_TBL" set req_date = now(), api_type =#{api_type}
+ 	where mac_address =#{mac_address} and req_id =#{req_id} and client_access_log_req_type=3
+ 	 returning *
+ 	)
+ 	insert into "CLIENT_ACCESSLOG_TBL"(client_access_log_req_type, mac_address, req_id,api_type,req_date)  
+ 	select #{client_access_log_req_type} , #{mac_address}, #{req_id} , #{api_type}, now()
+ 	where not EXISTS(select * from update_step)
+ 	</otherwise>
+ 	</choose>
+	</insert>
+</mapper>
