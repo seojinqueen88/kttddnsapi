@@ -356,6 +356,26 @@ public class ApiService {
 		return apiDao.selectServiceWhereInServiceno(map);
 	}
 	
+
+	
+	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP(
+			String serviceNoListString, String phone) {
+		Map<String, Object> map = new HashMap<>();
+		map.put("serviceNoListString", serviceNoListString);
+		map.put("phone", phone);
+
+		return apiDao.selectDeviceMacWhereInServicenoPhoneOTP(map);
+	}
+	
+	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP1Hour(
+			String serviceNoListString, String phone) {
+		Map<String, Object> map = new HashMap<>();
+		map.put("serviceNoListString", serviceNoListString);
+		map.put("phone", phone);
+
+		return apiDao.selectDeviceMacWhereInServicenoPhoneOTP1Hour(map);
+	}
+	
 	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTPKttTEST(
 			String serviceNoListString, String phone) {
 		Map<String, Object> map = new HashMap<>();
@@ -363,15 +383,6 @@ public class ApiService {
 		map.put("phone", phone);
 
 		return apiDao.selectDeviceMacWhereInServicenoPhoneOTPKttTEST(map);
-	}
-	
-	public List<Map<String, Object>> selectDevicePhoneWhereInServiceno(
-			String serviceNoListString, String phone) {
-		Map<String, Object> map = new HashMap<>();
-		map.put("serviceNoListString", serviceNoListString);
-		map.put("phone", phone);
-
-		return apiDao.selectDevicePhoneWhereInServiceno(map);
 	}
 	
 	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP1HourKttTEST(
@@ -382,17 +393,6 @@ public class ApiService {
 
 		return apiDao.selectDeviceMacWhereInServicenoPhoneOTP1HourKttTEST(map);
 	}
-	
-	public List<Map<String, Object>> selectDeviceOTP1HourTimeWhereInServiceno(
-			String serviceNoListString, String phone) {
-		Map<String, Object> map = new HashMap<>();
-		map.put("serviceNoListString", serviceNoListString);
-		map.put("phone", phone);
-
-		return apiDao.selectDeviceOTP1HourTimeWhereInServiceno(map);
-	}
-	
-	
 
 	public P2pregister getOldP2p(String mac) {
 		P2pregister nP2pregister = new P2pregister();

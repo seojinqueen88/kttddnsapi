@@ -3770,7 +3770,7 @@ public class ApiController {
 		List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTPKttTEST(serviceNoListString.toString(), phone);
 
 		//ktt 상용 서버 용
-		//List<Map<String, Object>> deviceListOrg = apiService.selectDevicePhoneWhereInServiceno(serviceNoListString.toString(), phone);
+		//List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP(serviceNoListString.toString(), phone);
 		
 		
 		
@@ -3852,7 +3852,7 @@ public class ApiController {
 			List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP1HourKttTEST(serviceNoListString.toString(), phone);
 
 			//ktt 상용 서버 용
-			//List<Map<String, Object>> deviceListOrg = apiService.selectDeviceOTP1HourTimeWhereInServiceno(serviceNoListString.toString(), phone);
+			//List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP1Hour(serviceNoListString.toString(), phone);
 
 			
 			if (deviceListOrg != null) {
