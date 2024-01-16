@@ -3728,12 +3728,16 @@ public class ApiController {
 		@SuppressWarnings("unchecked")
 
 		ArrayList<String> serviceNoList = (ArrayList<String>) request.get("serviceNoList");
-		String phone = String.valueOf(request.get("phone"));
-
-		 logger.debug("phone :" + phone);
-		if (serviceNoList == null || phone == null) {
-			return "fail";
-		}
+		//String phone = String.valueOf(request.get("phone"));
+		String phone = (String) request.get("phone");
+		
+		 logger.debug("phone:" + phone);
+		 
+		 if (serviceNoList == null || phone == null || phone.length() != 11) {
+				return "fail";
+			}
+		 
+		
 		if (serviceNoList.size() == 0) {
 			List<Map<String, Object>> deviceList = new ArrayList<>();
 			response.put("deviceList", deviceList);
@@ -3778,25 +3782,6 @@ public class ApiController {
 			final List<Map<String, Object>> deviceList = new ArrayList<>();
 			deviceListOrg.parallelStream().forEach(deviceItem -> {
 				
-				/*
-				if (deviceItem != null && deviceItem.containsKey("domainType")) {
-					int domainType = (int) deviceItem.get("domainType");
-					
-					String maker = deviceItem.get("maker").toString();
-					String tmpMaker = "dahua";
-					logger.debug("domainType : "+domainType);
-					if ((domainType == 22 || domainType == 23)) // 'octdvr.co.kr' 20 'octnvr.co.kr' 21
-					{
-						logger.debug("telecopview 도메인 사용 장비");
-						if(!maker.trim().equals(tmpMaker))
-						{
-							logger.debug("제조사가 dahua는 제외");
-							//deviceList.add(deviceItem);
-						}
-					}
-				}*/
-				
-				
 				deviceList.add(deviceItem);
 			});
 
@@ -3812,8 +3797,8 @@ public class ApiController {
 			@SuppressWarnings("unchecked")
 
 			ArrayList<String> serviceNoList = (ArrayList<String>) request.get("serviceNoList");
-			String phone = String.valueOf(request.get("phone"));
-
+			//String phone = String.valueOf(request.get("phone"));
+			String phone = (String) request.get("phone");
 			 logger.debug("phone :" + phone);
 			if (serviceNoList == null || phone == null) {
 				return "fail";

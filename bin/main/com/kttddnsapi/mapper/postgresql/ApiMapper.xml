@@ -262,7 +262,8 @@ REGEXP_REPLACE(replace(coalesce(empty3,''), '.', ''),'[[:alpha:]]','','g')  as "
 		<!-- 
 		select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );
 	-->
-			 select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and maker not like '%dahua%' and domain like '%telecopview%'and replace(jumin , ':' ,'')not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );			 	 
+			 select distinct rtrim(jumin) as mac FROM users where service_no in (${serviceNoListString}) and maker not like '%dahua%' and domain like '%telecopview%'and replace(jumin , ':' ,'')
+			 not in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );			 	 
 	
 	</select>
 		
