@@ -1141,13 +1141,16 @@ public class ApiController {
 	    if (apiMac.length() != 12)
 	      return "fail"; 
 	    String ddnsMac = Encryptions.remakeMac(macAddress, true);
-	    logger.debug("ddnsMac" + ddnsMac);
+	    logger.debug("ddnsMac : " + ddnsMac);
 	    HttpServletRequest httpServletRequest = (
 	      (ServletRequestAttributes)RequestContextHolder.currentRequestAttributes()).getRequest();
 	    String clientIp = this.apiService.getIp(httpServletRequest);
 	    String serverIp = this.apiService.selectDevicePublicIpWhereMac(ddnsMac);
 	     access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
 
+	     logger.debug("clientIp : " + clientIp);
+	     logger.debug("serverIp : " + serverIp);
+	     
 	    if (!clientIp.equals(serverIp))
 	      return "nomatchip"; 
 	    if(access_rule == null)
@@ -2111,25 +2114,25 @@ public class ApiController {
 
 			String ddnsMac = Encryptions.remakeMac(macAddress, true);
 			
-			// ddnslogService.insertDdnslogPhone(phone);
-			ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString());
+			//ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString());
 			if (request.containsKey("CHANGE_OTP_YN_FORCE")) {
 				Integer otp_yn = Integer.valueOf((String) request.get("CHANGE_OTP_YN_FORCE"));
 				apiService.updateUserOTP_YN(otp_yn, macAddress);
 			}
-			else if (!ddnslogService.insertDdnslog(macAddress, msg.toString())) /// OTP_YN의 경우 해당 INSERT 구문이 성공
-			                                                                     /// 시 dB서버의 트리거(함수)에 의하여
+			//else if (!ddnslogService.insertDdnslog(macAddress, msg.toString())) /// OTP_YN의 경우 해당 INSERT 구문이 성공 시 dB서버의 트리거(함수)에 의하여
 			    	  
-			// else if (!ddnslogService.insertDdnslog(macAddress, msg))
+			 else if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
 			
-
 			// OTP_YN의 경우 해당 INSERT 구문이 성공시 dB서버의 트리거(함수)에 의하여 자동으로 3으로 갱신이 됨.
 			{
 				msg = null;
 				return "fail";
 			}
 
-			Integer access_rule = 0;
+			//Integer access_rule = 0;
+
+			String access_rule;
+			
 			List<Map<String, Object>> map = null;
 
 			if (request.containsKey("white_ip")) {
@@ -2148,62 +2151,61 @@ public class ApiController {
 			}
 		
 			// SJ 통합버전 4.0.0 버전 업그래이드 시 개선 추가(20231128)
-
+/*
 			Map<String, Object> device = null;
 
 			device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
 			int device_ver = apiService.verString2Int(device.get("device_ver").toString());
-			if (device_ver >= apiService.verString2Int("V4.0.0")) {
+			if (device_ver >= apiService.verString2Int("V4.0.0")) 
+			{
 				access_rule = 2;
 				if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true) {
-				}
-			} else {
+				}	
+			} 
+			else 
+			{
+				logger.debug(" access_rule : " + access_rule);
 				access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
-
 			}
-			response.put("access_rule", access_rule.toString()); // access_rule = 0 --> 전체 허용(올레, 스마트아이즈, 통합앱) 1 -->
-																	// 올레, 통합앱, 2 --> 통합앱
+			response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 :올레, 통합앱, 2 :통합앱
 			return "success";
-
+*/
 			
+			//if (map != null && map.size() > 0 && map.get(0).get("service_user") != null && map.get(0).get("service_user").toString().equals("1")) {
 
-			
-			/*
-			if (map != null && map.size() > 0 && map.get(0).get("service_user") != null
-					&& map.get(0).get("service_user").toString().equals("1")) {
-
-				
 				// SJ 통합버전 4.0.0 버전 업그래이드 시 개선 추가(20231128)
 
 				Map<String, Object> device = null;
 
 				device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
 				int device_ver = apiService.verString2Int(device.get("device_ver").toString());
-				logger.debug(" device_ver : " + device_ver);
+				
+				logger.debug("device_ver : " + device_ver);
 
-				if (device_ver >= apiService.verString2Int("V4.0.0")) {
-					access_rule = 2;
-					if (apiService.update_users_service_no_access_rule(macAddress, access_rule) == true) {
-						logger.debug(" !!!!!!!!!!!!!!!!!!!!!");
-						logger.debug(" 버전높아 access_rule : " + access_rule);
-					}
-				} else {
-					access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
-					logger.debug(" ??????????????????????");
-					logger.debug(" 버전낮아 access_rule : " + access_rule);
-
+				if (device_ver >= apiService.verString2Int("V4.0.0")) 
+				{
+					access_rule = "2";
+					
+					apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
+					logger.debug(" 버전높아 access_rule : " + access_rule);
+				}
+				else
+				{
+					access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+					//access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
+					
 				}
 				logger.debug(" 최종 access_rule  : " + access_rule);
-				response.put("access_rule", access_rule.toString()); // access_rule = 0 --> 전체 허용(올레, 스마트아이즈, 통합앱) 1 -->
-																		// 올레, 통합앱, 2 --> 통합앱
+				response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 : 올레, 통합앱, 2 --> 통합앱
 				// sjend
 				return "success";
-
+/*
 			} else {
 				return "nomatchip";
 			}*/
 
 		} catch (Exception e) {
+			logger.debug(" catch");
 			response.clear();
 			return "fail";
 		}
@@ -3736,8 +3738,7 @@ public class ApiController {
 		 if (serviceNoList == null || phone == null || phone.length() != 11) {
 				return "fail";
 			}
-		 
-		
+
 		if (serviceNoList.size() == 0) {
 			List<Map<String, Object>> deviceList = new ArrayList<>();
 			response.put("deviceList", deviceList);
@@ -3753,41 +3754,67 @@ public class ApiController {
 					serviceNoListString.append(serviceNo);
 					serviceNoListString.append("',");
 				}
+				else
+				{
+					return "fail";
+				}
 			}
 			// 마지막 ,(쉼표)제거
 			serviceNoListString.delete(serviceNoListString.toString().length() - 1,
 					serviceNoListString.toString().length());
 
-			if (serviceNoListString.toString().length() == 0) {
+			if (serviceNoListString.toString().length() == 0) 
+			{
 				List<Map<String, Object>> deviceList = new ArrayList<>();
 				response.put("macList", deviceList);
 				deviceList = null;
 				return "success";
 			}
+			
 		} catch (Exception e) {
 			if (logger.isDebugEnabled())
 				e.printStackTrace();
 		}
 		
-
 		//ktt test server용
 		List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTPKttTEST(serviceNoListString.toString(), phone);
 
 		//ktt 상용 서버 용
 		//List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP(serviceNoListString.toString(), phone);
-		
-		
-		
-		if (deviceListOrg != null) {
-			final List<Map<String, Object>> deviceList = new ArrayList<>();
-			deviceListOrg.parallelStream().forEach(deviceItem -> {
-				
-				deviceList.add(deviceItem);
-			});
 
-			response.put("macList", deviceList);
-		} else {
-			response.put("macList", new ArrayList<>());
+		logger.debug("deviceListOrg.size() : " + deviceListOrg.size());
+		logger.debug("deviceListOrg : " + deviceListOrg);
+		
+		if(deviceListOrg.size() > 0)
+		{
+			if (deviceListOrg != null) 
+			{
+				final List<Map<String, Object>> deviceList = new ArrayList<>();
+				deviceListOrg.parallelStream().forEach(deviceItem -> {
+					deviceList.add(deviceItem);
+				});
+
+				if(deviceList == null || deviceList.size()== 0)
+				{
+					return "fail";
+				}
+				else
+				{
+					response.put("macList", deviceList);
+
+				}
+				//response.put("macList", deviceList);
+			} 
+			else
+			{
+				return "fail";
+			}
+		}
+	
+		else 
+		{
+			return "fail";
+			//response.put("macList", new ArrayList<>());
 		}
 		return "success";
 	}
@@ -3818,6 +3845,10 @@ public class ApiController {
 						serviceNoListString.append(serviceNo);
 						serviceNoListString.append("',");
 					}
+					else
+					{
+						return "fail";
+					}
 				}
 				// 마지막 ,(쉼표)제거
 				serviceNoListString.delete(serviceNoListString.toString().length() - 1,
@@ -3839,17 +3870,36 @@ public class ApiController {
 			//ktt 상용 서버 용
 			//List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP1Hour(serviceNoListString.toString(), phone);
 
-			
-			if (deviceListOrg != null) {
-				final List<Map<String, Object>> deviceList = new ArrayList<>();
-				deviceListOrg.parallelStream().forEach(deviceItem -> {
-					
-					deviceList.add(deviceItem);
-				});
+			if(deviceListOrg.size() > 0)
+			{
+				if (deviceListOrg != null) 
+				{
+					final List<Map<String, Object>> deviceList = new ArrayList<>();
+					deviceListOrg.parallelStream().forEach(deviceItem -> {
+						deviceList.add(deviceItem);
+					});
 
-				response.put("macList", deviceList);
-			} else {
-				response.put("macList", new ArrayList<>());
+					if(deviceList == null || deviceList.size()== 0)
+					{
+						return "fail";
+					}
+					else
+					{
+						response.put("macList", deviceList);
+
+					}
+					//response.put("macList", deviceList);
+				} 
+				else
+				{
+					return "fail";
+				}
+			}
+		
+			else 
+			{
+				return "fail";
+				//response.put("macList", new ArrayList<>());
 			}
 			return "success";
 		}
