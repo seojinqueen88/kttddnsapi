@@ -2113,16 +2113,17 @@ public class ApiController {
 			}
 
 			String ddnsMac = Encryptions.remakeMac(macAddress, true);
+
 			
 			//ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString());
 			if (request.containsKey("CHANGE_OTP_YN_FORCE")) {
 				Integer otp_yn = Integer.valueOf((String) request.get("CHANGE_OTP_YN_FORCE"));
+				logger.debug("CHANGE_OTP_YN_FORCE :" + otp_yn);
 				apiService.updateUserOTP_YN(otp_yn, macAddress);
+				
 			}
-			//else if (!ddnslogService.insertDdnslog(macAddress, msg.toString())) /// OTP_YN의 경우 해당 INSERT 구문이 성공 시 dB서버의 트리거(함수)에 의하여
-			    	  
+			//else if (!ddnslogService.insertDdnslog(macAddress, msg.toString())) /// OTP_YN의 경우 해당 INSERT 구문이 성공 시 dB서버의 트리거(함수)에 의하여 
 			 else if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
-			
 			// OTP_YN의 경우 해당 INSERT 구문이 성공시 dB서버의 트리거(함수)에 의하여 자동으로 3으로 갱신이 됨.
 			{
 				msg = null;
@@ -2149,27 +2150,6 @@ public class ApiController {
 			} else {
 				map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
 			}
-		
-			// SJ 통합버전 4.0.0 버전 업그래이드 시 개선 추가(20231128)
-/*
-			Map<String, Object> device = null;
-
-			device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
-			int device_ver = apiService.verString2Int(device.get("device_ver").toString());
-			if (device_ver >= apiService.verString2Int("V4.0.0")) 
-			{
-				access_rule = 2;
-				if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true) {
-				}	
-			} 
-			else 
-			{
-				logger.debug(" access_rule : " + access_rule);
-				access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
-			}
-			response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 :올레, 통합앱, 2 :통합앱
-			return "success";
-*/
 			
 			//if (map != null && map.size() > 0 && map.get(0).get("service_user") != null && map.get(0).get("service_user").toString().equals("1")) {
 
@@ -2180,14 +2160,12 @@ public class ApiController {
 				device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
 				int device_ver = apiService.verString2Int(device.get("device_ver").toString());
 				
-				logger.debug("device_ver : " + device_ver);
-
 				if (device_ver >= apiService.verString2Int("V4.0.0")) 
 				{
 					access_rule = "2";
-					
-					apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
-					logger.debug(" 버전높아 access_rule : " + access_rule);
+					//if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true){}
+					//apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
+					apiService.update_users_service_no_access_rule((Encryptions.remakeMac(macAddress, true)), Integer.valueOf (access_rule));
 				}
 				else
 				{
@@ -2195,7 +2173,6 @@ public class ApiController {
 					//access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
 					
 				}
-				logger.debug(" 최종 access_rule  : " + access_rule);
 				response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 : 올레, 통합앱, 2 --> 통합앱
 				// sjend
 				return "success";
