@@ -14,11 +14,16 @@ public class ClientAccessLogService {
   static public final int TYPE_CMS_ACCESS_LOG = TYPE_APP_ACCESS_LOG+1;
   static public final int TYPE_DEVICE_ACCESS_LOG = TYPE_CMS_ACCESS_LOG+1;
   static public final int TYPE_UNKOWN_ACCESS_LOG = TYPE_DEVICE_ACCESS_LOG+1;
-  public int insert_update_ClientAccessLogTbl(int accessType, String req_id, String mac_address, String api_type)
+  public int insert_update_ClientAccessLogTbl(int TYPE_DEVICE_ACCESS_LOG, String req_id, String mac_address, String api_type)
   {
     Map<String, Object> map = new HashMap<>();
-   System.out.println(accessType);
-    map.put("client_access_log_req_type", accessType);
+   System.out.println("TYPE_DEVICE_ACCESS_LOG :" + TYPE_DEVICE_ACCESS_LOG );
+   System.out.println("req_id :" + req_id );
+   System.out.println("mac_address :" + mac_address );
+   System.out.println("api_type :" + api_type );
+   
+   
+    map.put("client_access_log_req_type", TYPE_DEVICE_ACCESS_LOG);
     map.put("req_id", req_id);
     map.put("mac_address", mac_address);
     map.put("api_type", api_type);

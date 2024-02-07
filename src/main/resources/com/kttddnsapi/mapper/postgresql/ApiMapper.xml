@@ -124,7 +124,10 @@
 	from users as u left join models b on u.empty2 = b.model  , (select  jumin from updated_log_call ) as t where u.jumin = t.jumin ORDER BY domain ASC ,otp_yn DESC ;
 		</when>
 		<otherwise>
+		<!-- 
 			select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn" from users where service_user = 1 and otp_yn != 0 and service_no in (${serviceNoListString})
+		 -->
+			select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn", service_open, service_user, register_type from users where service_open = 2 and otp_yn != 0 and service_no in (${serviceNoListString})
 		</otherwise>
 		</choose>
 	</select>
@@ -163,12 +166,37 @@
 		<!--select rtrim(addr) as "addr" from users where jumin = #{mac} and service_open = 1 -->
 		select rtrim(addr) as "addr" from users where jumin = #{mac} and service_user = 1 
 	</select>
-
+<!-- 
 	<select id="selectDevicePublicIpWhereMacByMap" parameterType="map" resultType="map">
 	 WITH updated_last_access_master_key_time as  (
     	update users set last_access_master_key_time = now() AT TIME ZONE 'KST'
 		where jumin = #{mac} RETURNING jumin) 
 		select rtrim(addr) as "addr" ,access_rule as "access_rule", service_user as "service_user" 
+		 from users, (select jumin from updated_last_access_master_key_time) as t where EXISTS(	
+		 select ip_address  from white_list_ip where 
+	 	<choose>
+	 	<when test="white_ip!= null and !white_ip.equals('')">
+		
+		ip_address >>= #{white_ip}::inet
+	 	</when>
+		<otherwise>
+			 ip_address='127.0.0.1'
+		</otherwise>
+		</choose>
+		)
+		- 	and jumin = #{mac} and service_user = 1 -
+			and t.jumin = users.jumin  and service_user != 0
+		<if test="check_service_open_nm != null and check_service_open_nm gte  0"> 
+		and service_open != #{check_service_open_nm}
+		</if>
+	</select>
+	 -->
+	
+		<select id="selectDevicePublicIpWhereMacByMap" parameterType="map" resultType="map">
+	 WITH updated_last_access_master_key_time as  (
+    	update users set last_access_master_key_time = now() AT TIME ZONE 'KST'
+		where jumin = #{mac} RETURNING jumin) 
+		select rtrim(addr) as "addr" ,access_rule as "access_rule", service_open as "service_open" 
 		 from users, (select jumin from updated_last_access_master_key_time) as t where EXISTS(	
 		 select ip_address  from white_list_ip where 
 	 	<choose>
@@ -180,13 +208,7 @@
 			 ip_address='127.0.0.1'
 		</otherwise>
 		</choose>
-		)
-		<!-- 	and jumin = #{mac} and service_user = 1 -->
-			and t.jumin = users.jumin  and service_user != 0
-		<if test="check_service_open_nm != null and check_service_open_nm gte  0"> 
-		and service_open != #{check_service_open_nm}
-		</if>
-		
+		)and t.jumin = users.jumin
 	</select>
 	
 	<select id="selectDeviceWhereSysid" parameterType="map" resultType="map">
