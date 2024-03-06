@@ -1138,7 +1138,6 @@ public class ApiController {
 		{
 			serverIp = map.get(0).get("addr").toString();
 			access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
-			logger.info("access_rule 0~2 : " + access_rule);
 		} 
 		 else 
 		 {
@@ -2119,6 +2118,8 @@ public class ApiController {
 			}
 			else if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
 			*/
+			
+			
 			 if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
 			// OTP_YN의 경우 해당 INSERT 구문이 성공시 dB서버의 트리거(함수)에 의하여 자동으로 3으로 갱신이 됨.
 			{
@@ -2152,8 +2153,30 @@ public class ApiController {
 				device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
 				int device_ver = apiService.verString2Int(device.get("device_ver").toString());
 				
+				if(phone.contains("OTP"))
+				{
+					access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+				}
+				else
+				{
+					if (device_ver >= apiService.verString2Int("V4.0.0")) 
+					{
+						
+						access_rule = "2";
+						//if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true){}
+						//apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
+						apiService.update_users_service_no_access_rule((Encryptions.remakeMac(macAddress, true)), Integer.valueOf (access_rule));
+					}
+					else
+					{  
+						access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+					}
+				}
+				
+				/*
 				if (device_ver >= apiService.verString2Int("V4.0.0")) 
 				{
+					
 					access_rule = "2";
 					//if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true){}
 					//apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
@@ -2164,7 +2187,7 @@ public class ApiController {
 					access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
 					//access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
 					
-				}
+				}*/
 				response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 : 올레, 통합앱, 2 --> 통합앱
 				// sjend
 				return "success";
@@ -2822,14 +2845,14 @@ public class ApiController {
 							{
 								if(otp_yn == 3)
 								{
-									logger.debug("모든 장비(5대)가 3 OTP 인증 완료 일 경우 : fwup = 0으로 device List를 전달한다.");
+									//logger.debug("모든 장비(5대)가 3 OTP 인증 완료 일 경우 : fwup = 0으로 device List를 전달한다.");
 									device.put("model", tmpDevice.get("model"));
 									device.put("fwUp", 0);
 								}
 								else 
 								{
 								
-                					logger.debug("하나라도 OTP 인증이 안했을 경우 (0 OTP 인증안함, 1 기존통합사용자, 2 관리자변경) :  msg에 아래의 내용과 장비의 mac 을 현시하며 device List는 null로 전달한다.");
+                					//logger.debug("하나라도 OTP 인증이 안했을 경우 (0 OTP 인증안함, 1 기존통합사용자, 2 관리자변경) :  msg에 아래의 내용과 장비의 mac 을 현시하며 device List는 null로 전달한다.");
                 					List<Map<String, Object>> emptyList = new ArrayList<>();
                 					response.put("deviceList", emptyList);
 									msg = "장비에서 [우클릭] →[시스템]→[사용자수정]에서 OTP인증 후 비밀번호 변경을 진행해주세요. (" + macList + ")";
@@ -2843,7 +2866,7 @@ public class ApiController {
 						//20240102 시나리오 확인 예정
 						else if(bNoMaker_device || rifa_device > 5)
 						{
-							logger.debug(" 요청한 모든 장비가 이화트론 장비가 아니거나, 이화트론 장비 이지만 장비의 갯수가 5개보다 많을 경우 fwup = 0으로 device List를 전달한다. ");
+							//logger.debug(" 요청한 모든 장비가 이화트론 장비가 아니거나, 이화트론 장비 이지만 장비의 갯수가 5개보다 많을 경우 fwup = 0으로 device List를 전달한다. ");
 							device.put("model", tmpDevice.get("model"));
 							device.put("fwUp", 0);
 
@@ -2851,7 +2874,7 @@ public class ApiController {
 					}
 					else  
 					{
-						logger.debug("장비의 버전이 1개라도 낮을 경우 :  모든 장비의 device List를 전달하며, 최신 버전이 아닌 장비는 fwup = 1, 최신 버전인 장비는 fwup = 0으로 전달 한다. ");
+						//logger.debug("장비의 버전이 1개라도 낮을 경우 :  모든 장비의 device List를 전달하며, 최신 버전이 아닌 장비는 fwup = 1, 최신 버전인 장비는 fwup = 0으로 전달 한다. ");
 						device.put("model", tmpDevice.get("model"));
 						device.put("fwUp", (device_ver < last_ver) ? 1 : 0);
 					}
@@ -3711,8 +3734,6 @@ public class ApiController {
 		//String phone = String.valueOf(request.get("phone"));
 		String phone = (String) request.get("phone");
 		
-		 logger.debug("phone:" + phone);
-		 
 		 if (serviceNoList == null || phone == null || phone.length() != 11) {
 				return "fail";
 			}
@@ -3850,10 +3871,6 @@ public class ApiController {
 			//ktt 상용 서버 용
 			List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoPhoneOTP1Hour(serviceNoListString.toString(), phone);
 			
-			logger.debug("serviceNoListString.toString() : " + serviceNoListString.toString());
-			logger.debug("deviceListOrg.size() : " + deviceListOrg.size());
-			logger.debug("deviceListOrg : " + deviceListOrg);
-			
 			if(deviceListOrg.size() > 0)
 			{
 				if (deviceListOrg != null) 
@@ -3963,6 +3980,11 @@ public class ApiController {
 				}
 				logger.debug("infection : Domain {} MacAddress {} Type {} ", domain, macAddress, infection_type);
 				logger.debug("log_data {}", log_data);
+				if(infection_type.shortValue() == 4)//화이트 리스트 단어 필터링 하지 않음.
+					{
+					bWriteMonitoringLog = true;
+					}
+				
 				if (log_data.length() > 0 && bWriteMonitoringLog) {
 					final String d = LocalDateTime.now(ZoneId.of("GMT+09:00"))
 							.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));

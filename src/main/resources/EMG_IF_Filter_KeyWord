@@ -50,3 +50,32 @@ trap2sink
 [intr_work]
 /usr/bin/ipcrm
 ktt_mac2p2puid
+flush
+VideoDec
+VideoDog
+nslookup
+awk
+awkNR
+upnpc
+romblock
+fsnotify_mark
+uname
+ipv6_addrconf
+gm_disp0_in_ddr
+gm_common_ddr0
+gm_user_blk_ddr
+lcd300vg_cfg
+nfsiod
+h26xenc_timer_t
+mcp100_cb_thread
+datain_callback
+ipv6_addrconf
+IDEN1200
+myip.opendns.com resolver1.opendns.com
+ /sbin/hotplug
+crlwin_
+kapmd
+/tmp/publicip
+xfs_mru_cache
+h265d
+find
