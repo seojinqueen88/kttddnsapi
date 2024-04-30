@@ -86,15 +86,17 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.request.WebRequest;
 
+import com.kttddnsapi.dao.ApiDao;
 import com.kttddnsapi.model.Commodity;
 import com.kttddnsapi.model.ImergencyReport;
 import com.kttddnsapi.model.Selfas;
+import com.kttddnsapi.model.WhiteListIp;
 import com.kttddnsapi.service.ApiService;
 import com.kttddnsapi.service.ClientAccessLogService;
 import com.kttddnsapi.service.CommodityService;
 import com.kttddnsapi.service.DdnslogService;
 import com.kttddnsapi.service.ImergencyReportService;
-
+import com.kttddnsapi.service.WhiteListIpService;
 import com.kttddnsapi.service.P2preservedService;
 import com.kttddnsapi.service.SelfasService;
 import com.kttddnsapi.service.SetupService;
@@ -130,6 +132,10 @@ public class ApiController {
 	private ImergencyReportService imergenyReportService;
 	@Autowired
 	private ServletContext context;
+	
+	@Autowired
+	private WhiteListIpService whiteListIpService;
+	
 	Logger logger = LoggerFactory.getLogger(ApiController.class);
 	Logger KTTDDNS_CLIENT_ACCESSLOG_looger = LoggerFactory.getLogger("CLIENT_ACCESSLOG");
 	Logger KTTDDNS_INFECTION_LOG_looger = LoggerFactory.getLogger("INFECTION_LOG");
@@ -427,6 +433,47 @@ public class ApiController {
 					else
 						result = "nopermission";
 					break;
+					
+					
+				case "KTTDDNS_WEAK_PASSWORD_TO_DEVICE":
+					requestKey = (String) request.get("auth");
+					if (Encryptions.isAvailableKey(command, requestKey))
+						result = KTTDDNS_WEAK_PASSWORD_TO_DEVICE(request, response);
+					else
+						result = "nopermission";
+					break;
+					
+				case "KTTDDNS_WHITE_LIST_IP_ADDRESS":
+					requestKey = (String) request.get("auth");
+					if (Encryptions.isAvailableKey(command, requestKey)) {
+						mustMsg = true;
+						result = KTTDDNS_WHITE_LIST_IP_ADDRESS(request, response);
+					} else {
+						result = "nopermission";
+					}
+					break;
+					
+				case "KTTDDNS_DEVICE_TO_WHITE_LIST_IP_ADDRESS":
+					requestKey = (String) request.get("auth");
+					if (Encryptions.isAvailableKey(command, requestKey)) {
+						mustMsg = true;
+						result = KTTDDNS_DEVICE_TO_WHITE_LIST_IP_ADDRESS(request, response);
+					} else {
+						result = "nopermission";
+					}
+					break;
+					
+					
+				case "KTTDDNS_DEVICE_TO_INSERT_WHITE_IP_ADDRESS":
+					requestKey = (String) request.get("auth");
+					if (Encryptions.isAvailableKey(command, requestKey)) {
+						result = KTTDDNS_DEVICE_TO_INSERT_WHITE_IP_ADDRESS(request, response);
+					} else {
+						result = "nopermission";
+					}
+					break;
+					
+					
 				case "KTTDDNS_SERVICE_APP_REGISTER":
 					requestKey = (String) request.get("auth");
 					if (Encryptions.isAvailableKey(command, requestKey)) {
@@ -565,7 +612,15 @@ public class ApiController {
 					}
 				default:
 					break;
-				//case "KTTDDNS_SERVICENO_TO_OTPLIST":
+					
+					case "KTTDDNS_SERVICENO_TO_OTPLIST":
+					requestKey = (String) request.get("auth");
+					if (Encryptions.isAvailableKey(command, requestKey))
+						result = KTTDDNS_SERVICENO_TO_OTPLIST(request, response);
+					else
+						result = "nopermission";
+					break;
+								
 					case "KTTDDNS_SERVICENO_TO_UNOTPLIST":
 					requestKey = (String) request.get("auth");
 					if (Encryptions.isAvailableKey(command, requestKey))
@@ -581,6 +636,8 @@ public class ApiController {
 					else
 						result = "nopermission";
 					break;
+					
+					
 				}
 			} catch (Exception e) {
 
@@ -726,8 +783,9 @@ public class ApiController {
 		response.put("deviceList", deviceList);
 		return "success";
 	}
-/*
-	  public String KTTDDNS_SERVICENO_TO_APP_DEVICEINFO_1(Map<String, Object> request, Map<String, Object> response) {
+	
+	
+	  public String KTTDDNS_SERVICENO_TO_APP_DEVICEINFO(Map<String, Object> request, Map<String, Object> response) {
 		    ArrayList<String> serviceNoList = (ArrayList<String>)request.get("serviceNoList");
 		    if (serviceNoList == null)
 		      return "fail"; 
@@ -755,7 +813,6 @@ public class ApiController {
 		    List<Map<String, Object>> deviceList = new ArrayList<>();
 		    for (Map<String, Object> deviceItem : deviceListOrg) {
 
-		    	//231214 sjlee xml add otp_yn != 0  
 		    	if ((((Integer)deviceItem.get("domainType")).intValue() == 20 || 
 		    		  ((Integer)deviceItem.get("domainType")).intValue() == 21))
 		    		continue; 
@@ -770,7 +827,7 @@ public class ApiController {
 		    response.put("deviceList", deviceList);
 		    return "success";
 		  }
-	*/
+	
 	
 	/**
 	 * 
@@ -789,7 +846,7 @@ public class ApiController {
 	 * 경우에는 해당 정보를 같이 반영한다.
 	 */
 
-	public String KTTDDNS_SERVICENO_TO_APP_DEVICEINFO(Map<String, Object> request, Map<String, Object> response) {
+	public String KTTDDNS_SERVICENO_TO_APP_DEVICEINFO_2(Map<String, Object> request, Map<String, Object> response) {
 		@SuppressWarnings("unchecked")
 
 		final ArrayList<String> serviceNoList = (ArrayList<String>) request.get("serviceNoList");
@@ -878,11 +935,9 @@ public class ApiController {
 					if ((domainType == 22 || domainType == 23)) // 'octdvr.co.kr' 20 'octnvr.co.kr' 21
 					{
 						int otp_yn = deviceItem.containsKey("otp_yn") ? (int) deviceItem.get("otp_yn") : 0;
-						int service_open = deviceItem.containsKey("service_open") ? (int) deviceItem.get("service_open")
-								: 0;
-						int register_type = deviceItem.containsKey("register_type")
-								? (int) deviceItem.get("register_type")
-								: -1;
+						//int service_open = deviceItem.containsKey("service_open") ? (int) deviceItem.get("service_open") : 0;
+						int service_user = deviceItem.containsKey("service_user") ? (int) deviceItem.get("service_user") : 0;
+						int register_type = deviceItem.containsKey("register_type") ? (int) deviceItem.get("register_type"): -1;
 /*
 						//Boolean b = (otp_yn > 0 && otp_yn <= 3) || ignoreOTPCondition; // OTP YN CHECK
 						b = b || (service_open >= 2
@@ -892,9 +947,49 @@ public class ApiController {
 								// Case1. “OTP_YN”컬럼의 값이 1이인 경우  1,2,3인 경우,  Case2. register_type이 0~2이면서 “service_open = 2” 이상인 장비 
 								//service_open =  0 개통 안됨 , service_open =  1 장비 개통 처리, service_open =  2 OSS 개통 처리
 
-							if (register_type == 0 || register_type == 1 || register_type == 2) {
-							StringBuffer noColonMac = new StringBuffer();
+							//if (register_type == 0 || register_type == 1 || register_type == 2) {
+							 
+						
+						if( otp_yn > 0 && otp_yn <= 3 )	 
+							 {
+							 StringBuffer noColonMac = new StringBuffer();
+				      		if (deviceItem.containsKey("macAddress")) 
+				      		{
+				                // String noColonMac = (String) deviceItem.get("macAddress");
+				                noColonMac.append(String.valueOf(deviceItem.get("macAddress"))).append("KTT_MASTER");
+				                deviceItem.put("masterKey", Encryptions.encryptMasterkey(Encryptions.getSHA(noColonMac.toString(), 1)));
+				              } else 
+				              {
+				                deviceItem.put("masterKey", "");
+				              }
+							 
+							 if (deviceItem.containsKey("DeviceVer")) 
+							 {
+								 String strDeviceVer = String.valueOf(deviceItem.get("DeviceVer")); //Devicever:FWversion
+								 int tDeviceVer = apiService.verString2Int(strDeviceVer);
+								 if (tDeviceVer != 0 && tDeviceVer >= apiService.verString2Int("V3.2.0")) 
+								 {
+									 deviceItem.put("otp_batch_authentication_avaiable", true);
+									//logger.info(tDeviceVer + "000000000");
+								 } 
+								 else 
+								 {
+									// FROM DB 웹페이지 model 버전
+									int tDeviceOtpAvailableVer = deviceItem.containsKey("last_ver") ? apiService.verString2Int(deviceItem.get("last_ver").toString()) : -1;
+									//logger.info("tDeviceOtpAvailableVer : " + tDeviceOtpAvailableVer);
+									if (tDeviceVer != 0 && tDeviceOtpAvailableVer > -1) 
+									{
+										deviceItem.put("otp_batch_authentication_avaiable", true);
+									} 
+									else 
+									{
+										deviceItem.put("otp_batch_authentication_avaiable", false);
 
+									}
+								}
+							}
+							
+							
 							/*
 							if (deviceItem.containsKey("macAddress")) {
 								// String noColonMac = (String) deviceItem.get("macAddress");
@@ -1112,7 +1207,8 @@ public class ApiController {
 	//20240205 상용코드로 원복 + service_open 1 과 같고 클 경우 + accrule 추가
 	public String KTTDDNS_MAC_TO_MASTERKEY(Map<String, Object> request, Map<String, Object> response) {
 	    String macAddress = (String)request.get("macAddress");
-	    Integer access_rule = 0;
+	    Integer access_rule = 0; //app_policy와 동일
+	    Integer web_policy = 0;
 	    //String access_rule;
 	    if (macAddress == null)
 	      return "fail"; 
@@ -1130,14 +1226,18 @@ public class ApiController {
 	     logger.debug("clientIp : " + clientIp);
 	     logger.debug("serverIp : " + serverIp);
 
-			List<Map<String, Object>> map = null;
-			map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
+		List<Map<String, Object>> map = null;
+		map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
 	     
+		/*
 		 if (map != null && map.size() > 0 && map.get(0).get("service_open") != null
 		 && Integer.valueOf(map.get(0).get("service_open").toString()) >= 1)
 		{
 			serverIp = map.get(0).get("addr").toString();
 			access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
+			web_policy = Integer.valueOf(map.get(0).get("web_policy").toString());
+			
+			logger.debug("web_policy", web_policy);
 		} 
 		 else 
 		 {
@@ -1147,13 +1247,31 @@ public class ApiController {
 	    if (!clientIp.equals(serverIp))
 	      return "nomatchip"; 
 	    
+	    if(access_rule == null || web_policy == null)
+	    {
+	    	access_rule = 0;
+	    	web_policy = 0;
+	    }
+	    
+	    response.put("web_policy", web_policy.toString());
+	    
+	    */
+	    		 
+		serverIp = map.get(0).get("addr").toString();
+		access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
+		
+	    if (!clientIp.equals(serverIp))
+	      return "nomatchip"; 
+	    
 	    if(access_rule == null)
 	    {
 	    	access_rule = 0;
 	    }
-	    String masterKey = Encryptions.getSHA(String.valueOf(apiMac) + "KTT_MASTER", 1);
+	    
+		String masterKey = Encryptions.getSHA(String.valueOf(apiMac) + "KTT_MASTER", 1);
 	    response.put("masterKey", Encryptions.encryptMasterkey(masterKey));
 		response.put("access_rule", access_rule.toString());
+		
 	    return "success";
 	  }
 	/*20231208 류수석님혼자개발한거라 원래 상용코드로 원복 + accrule만 추가
@@ -2060,7 +2178,7 @@ public class ApiController {
 		 * String domain = (String) request.get("domain"); String macAddress = (String)
 		 * request.get("macAddress"); String serviceNo = (String)
 		 * request.get("serviceNo"); String phone = (String) request.get("phone");
-		 * Integer access_rule = 0;
+		 * Integer y = 0;
 		 * 
 		 * if (domain == null || serviceNo == null || macAddress == null || phone ==
 		 * null) return "fail";
@@ -2085,7 +2203,169 @@ public class ApiController {
 		String macAddress = (String) request.get("macAddress");
 		String serviceNo = (String) request.get("serviceNo");
 		String phone = (String) request.get("phone");
+		
+			try {
+				if (domain == null || serviceNo == null || macAddress == null || phone == null) {
+					return "fail";
+				}
+		
+				
+				StringBuffer msg = new StringBuffer();
+				msg.append("OTP SEND - DOMAIN : ");
+				msg.append(domain);
+				msg.append(", MAC ADDRESS : ");
+				msg.append(macAddress);
+				msg.append(", SERVICE NO : ");
+				msg.append(serviceNo);
+				msg.append(", PHONE : ");
+				msg.append(phone);
 
+				
+				String apiMac = Encryptions.remakeMac(macAddress, false);
+
+				if (apiMac.length() != 12) {
+					return "fail";
+				}
+
+				String ddnsMac = Encryptions.remakeMac(macAddress, true);
+				Integer otp_batch_all  = 0;
+				if (request.containsKey("otp_batch_all")) {
+					otp_batch_all = Integer.valueOf((String) request.get("otp_batch_all"));
+					if(otp_batch_all == null)
+					{
+						return "fail";
+					}
+					apiService.updateOtpBatchAll(ddnsMac, otp_batch_all);
+					//response.put("otp_batch_all", otp_batch_all.toString());
+				}
+				else
+				{
+					 otp_batch_all = 0;
+					 apiService.updateOtpBatchAll(ddnsMac, otp_batch_all);
+				}
+				
+				if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
+					// OTP_YN의 경우 해당 INSERT 구문이 성공시 dB서버의 트리거(함수)에 의하여 자동으로 3으로 갱신이 됨.
+					{
+						msg = null;
+						return "fail";
+					}
+				
+				String access_rule;
+
+				List<Map<String, Object>> map = null;
+
+				if (request.containsKey("white_ip")) {
+					logger.debug("white_ip :");
+					String ip = request.get("white_ip").toString().trim();
+
+					Matcher m1 = this.VALID_IPV4_PATTERN.matcher(ip);
+					Matcher m12 = this.VALID_IPV6_PATTERN1.matcher(ip);
+					Matcher m22 = this.VALID_IPV6_PATTERN2.matcher(ip);
+
+					if (m1.matches() == true || (m12.matches() != false || m22.matches() != false)) 
+					{
+						map = apiService.selectDevicePublicIpWhereMac(ddnsMac, ip, 0);
+					}
+				} else {
+					map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
+				}
+				//if (map != null && map.size() > 0 && map.get(0).get("service_user") != null && map.get(0).get("service_user").toString().equals("1")) {
+
+					// SJ 통합버전 4.0.0 버전 업그래이드 시 개선 추가(20231128)
+					Map<String, Object> device = null;
+
+					device = apiService.selectDeviceWhereMac4(Encryptions.remakeMac(ddnsMac, true));
+					int device_ver = apiService.verString2Int(device.get("device_ver").toString());
+					
+					if(phone.contains("OTP"))
+					{
+						access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+					}
+					else
+					{
+						if (device_ver >= apiService.verString2Int("V4.0.0")) 
+						{
+							
+							access_rule = "2";
+							//if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true){}
+							//apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
+							apiService.update_users_service_no_access_rule((Encryptions.remakeMac(macAddress, true)), Integer.valueOf (access_rule));
+						}
+						else
+						{  
+							access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+						}
+					}
+					
+					/*
+					if (device_ver >= apiService.verString2Int("V4.0.0")) 
+					{
+						
+						access_rule = "2";
+						//if (apiService.update_users_service_no_access_rule(ddnsMac, access_rule) == true){}
+						//apiService.update_users_service_no_access_rule(macAddress, Integer.parseInt(access_rule));
+						apiService.update_users_service_no_access_rule((Encryptions.remakeMac(macAddress, true)), Integer.valueOf (access_rule));
+					}
+					else
+					{
+						access_rule = this.apiService.selectDevicePublicIpWhereMac_accessrule(ddnsMac);
+						//access_rule = Integer.valueOf(map.get(0).get("access_rule").toString());
+						
+					}*/
+					response.put("access_rule", access_rule.toString()); // access_rule = 0 : 전체 허용(올레, 스마트아이즈, 통합앱) 1 : 올레, 통합앱, 2 --> 통합앱
+					// sjend
+					return "success";
+	/*
+				} else {
+					return "nomatchip";
+				}*/
+
+					} catch (Exception e) 
+				{
+				logger.debug(" catch");
+				}
+			
+			
+		response.clear();
+		return "fail";
+	}
+						
+		
+	
+	
+	
+	public String KTTDDNS_OTP_LOG2_org(Map<String, Object> request, Map<String, Object> response) {
+		/*
+		 * String domain = (String) request.get("domain"); String macAddress = (String)
+		 * request.get("macAddress"); String serviceNo = (String)
+		 * request.get("serviceNo"); String phone = (String) request.get("phone");
+		 * Integer y = 0;
+		 * 
+		 * if (domain == null || serviceNo == null || macAddress == null || phone ==
+		 * null) return "fail";
+		 * 
+		 * // String msg = "OTP SEND - DOMAIN : " + domain + ", MAC ADDRESS : " +
+		 * macAddress + ", SERVICE // NO : " + serviceNo + ", PHONE : " + phone;
+		 * StringBuffer msg = new StringBuffer(); msg.append("OTP SEND - DOMAIN : ");
+		 * msg.append(domain); msg.append(", MAC ADDRESS : "); msg.append(macAddress);
+		 * msg.append(", SERVICE NO : "); msg.append(serviceNo);
+		 * msg.append(", PHONE : "); msg.append(phone); if
+		 * (request.containsKey("CHANGE_OTP_YN_FORCE")) { Integer otp_yn =
+		 * Integer.valueOf((String) request.get("CHANGE_OTP_YN_FORCE"));
+		 * apiService.updateUserOTP_YN(otp_yn, macAddress); } else { if
+		 * (!ddnslogService.insertDdnslog(macAddress, msg.toString())) /// OTP_YN의 경우 해당
+		 * INSERT 구문이 성공 /// 시 dB서버의 트리거(함수)에 의하여 /// 자동으로 3으로 갱신이 됨. { msg = null;
+		 * return "fail"; } } msg = null; response.put("access_rule",
+		 * access_rule.toString()); return "success";
+		 */
+
+		// 2023-10-20 OTP LOG2 access_rule 추가(김동혁선임 nvr에 전달)
+		String domain = (String) request.get("domain");
+		String macAddress = (String) request.get("macAddress");
+		String serviceNo = (String) request.get("serviceNo");
+		String phone = (String) request.get("phone");
+					
 		try {
 			if (domain == null || serviceNo == null || macAddress == null || phone == null) {
 				return "fail";
@@ -2120,14 +2400,18 @@ public class ApiController {
 			*/
 			
 			
-			 if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
+			if (!ddnslogService.insertDdnslogPhone(macAddress, phone, serviceNo, msg.toString()))
+			//if (!ddnslogService.insertDdnslog(macAddress, msg.toString()))
 			// OTP_YN의 경우 해당 INSERT 구문이 성공시 dB서버의 트리거(함수)에 의하여 자동으로 3으로 갱신이 됨.
 			{
+				logger.debug("fail");
 				msg = null;
 				return "fail";
 			}
+	
+			logger.debug("insertDdnslog OK");
 			String access_rule;
-			
+
 			List<Map<String, Object>> map = null;
 
 			if (request.containsKey("white_ip")) {
@@ -2202,7 +2486,9 @@ public class ApiController {
 			return "fail";
 		}
 	}
-
+	
+	
+	
 	public String KTTDDNS_MAC_TO_SERVICE(Map<String, Object> request, Map<String, Object> response) {
 		String macAddress = (String) request.get("macAddress");
 
@@ -2265,7 +2551,7 @@ public class ApiController {
 		if ((int) device.get("service_open") >= 1)
 			return "success";
 
-		if (!apiService.updateDeviceServiceopenWhereMac(ddnsMac))
+		if (!apiService.updateDeviceServiceopenWhereMac(ddnsMac)) //service open 시 web_policy =1 추가
 			return "fail";
 
 		return "success";
@@ -3503,6 +3789,30 @@ public class ApiController {
 					date = new Timestamp(System.currentTimeMillis());
 				}
 			}
+			
+			if (request.containsKey("onlyReport")) // KTTDDNS_CLIENT_ACCESSLOG(통계 기록 모드)
+			{
+				logger.debug("onlyReport");
+				if (request.containsKey("mac_list")) {
+					logger.debug("mac_list");
+					ArrayList<String> list = (ArrayList<String>) (request.get("mac_list"));
+					String app_name = String.valueOf(request.get("app_name"));
+					Integer mobile_type = Integer.valueOf(request.get("mobile_type").toString());
+					List<String> mlist = (List<String>) apiService.updateAppStaistics(list, app_name, mobile_type);
+					// System.out.println(mlist.toString());
+					if (mlist != null) 
+					{
+						response.put("filtered_mac_address", mlist);
+					}
+					if (Boolean.valueOf(request.get("onlyReport").toString()) == true) 
+					{
+						return "success";
+					}
+				}
+			}
+				
+
+				/*
 			if (request.containsKey("onlyReport")) // KTTDDNS_CLIENT_ACCESSLOG(통계 기록 모드)
 				if (request.containsKey("mac_list")) {
 					ArrayList<String> list = (ArrayList<String>) (request.get("mac_list"));
@@ -3517,6 +3827,7 @@ public class ApiController {
 						return "success";
 					}
 				}
+				*/
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (Boolean.valueOf(request.get("onlyReport").toString()) == true) {
@@ -3527,12 +3838,29 @@ public class ApiController {
 		if (request.containsKey("mac")) {
 			Object o;
 			String mac = (String) request.get("mac");
+			if(mac == null)
+			{
+				response.put("msg", "잘못된 맥주소입니다.");
+				return "fail";
+			}
 			response.put("mac", mac);
 
 			try {
 				int intType = -1;
 				boolean isCLientAPI = false;
-				if (request.containsKey("client_type") && request.containsKey("register_type")) {
+				if (request.containsKey("client_type") && request.containsKey("register_type"))
+					
+				{
+					/*
+					Integer client_type = Integer.valueOf(request.get("client_type").toString());
+					Integer register_type = Integer.valueOf(request.get("register_type").toString());
+					
+					if((client_type > 3) &&( register_type > 3))
+
+					{	
+						response.put("msg", "잘못된 값 입니다.");
+						return "fail";
+					}*/
 					// 사용자 관리 기능 3안
 					KTTDDNS_CLIENT_ACCESSLOG_looger.info("mac {} \t client_type {} \t register_type {}",
 							request.get("mac"), request.get("client_type"), request.containsKey("register_type"));
@@ -3559,7 +3887,7 @@ public class ApiController {
 
 						switch (intType) {
 						case 0: // 통합 앱 app_date 컬럼과 app_access_id컬럼값을 갱신한다.
-							logger.debug("앱0000000000000");
+							//logger.debug("앱0000000000000");
 							result = clientAccessLogService.insert_update_ClientAccessLogTbl(
 									ClientAccessLogService.TYPE_APP_ACCESS_LOG, (String) request.get("id"),
 									Encryptions.remakeMac(mac, true), String.valueOf(request.get("register_type"))) > 0
@@ -3567,7 +3895,7 @@ public class ApiController {
 											: "updateOk_InsertNo";
 							break;
 						case 1: // cms_date 컬럼과 cms_access_id컬럼값을 갱신한다.,,RESERVED
-							logger.debug("cms1111111111111");
+							//logger.debug("cms1111111111111");
 							result = clientAccessLogService.insert_update_ClientAccessLogTbl(
 									ClientAccessLogService.TYPE_CMS_ACCESS_LOG, (String) request.get("id"),
 									Encryptions.remakeMac(mac, true), String.valueOf(request.get("register_type"))) > 0
@@ -3575,7 +3903,7 @@ public class ApiController {
 											: "updateOk_InsertNo";
 							break;
 						case 2:
-							logger.debug("장비222222222222222");
+							//logger.debug("장비222222222222222");
 							result = clientAccessLogService.insert_update_ClientAccessLogTbl(
 									ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG, String.valueOf(o),
 									Encryptions.remakeMac(mac, true), "fromDevice") > 0 ? "success" : "fail";
@@ -3590,11 +3918,20 @@ public class ApiController {
 					// 사용자 관리 기능 1안
 					o = request.get("type");
 					String strType = String.valueOf(request.get("type"));
-					logger.debug("type : " + strType);
+					
+					
+					Integer intType_device = Integer.valueOf(strType.toString());
+					
+					if(intType_device >= 2)
+
+					{
+						response.put("msg", "잘못된 값 입니다.");
+						return "fail";
+					}
+										
 					if (o instanceof String) {
 
-						if (strType.matches("-?\\d+(\\.\\d+)?")) // match a number with optional '-' and
-						// decimal.
+						if (strType.matches("-?\\d+(\\.\\d+)?")) // match a number with optional '-' and decimal.
 						{
 							intType = Integer.parseInt(strType);
 
@@ -3608,7 +3945,7 @@ public class ApiController {
 						isCLientAPI = true;
 					}
 					// System.out.println("\n"+ intType);
-					if (isCLientAPI && request.containsKey("protocol_type")) { // CLINET 용 (주로 : 모바일단말기)
+					if (isCLientAPI && request.containsKey("protocol_type")) { 
 						switch (intType) {
 						/*
 						 * case 0: // 장비 UI에서 호출 된 경우 result =
@@ -3623,8 +3960,7 @@ public class ApiController {
 						 */
 						case 0:
 						case 1:
-							logger.debug("장비1111111111" + "ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG : " + ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG +"strType :"+ strType +
-									Encryptions.remakeMac(mac, true) + "request.get(\"protocol_type\").toString() :" + request.get("protocol_type").toString());
+							//logger.debug("장비1111111111" + "ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG : " + ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG +"strType :"+ strType + Encryptions.remakeMac(mac, true) + "request.get(\"protocol_type\").toString() :" + request.get("protocol_type").toString());
 							result = clientAccessLogService.insert_update_ClientAccessLogTbl(
 									ClientAccessLogService.TYPE_DEVICE_ACCESS_LOG, strType,
 									Encryptions.remakeMac(mac, true), request.get("protocol_type").toString()) > 0
@@ -3632,15 +3968,14 @@ public class ApiController {
 											: "updateOk_InsertNo";
 							break;
 						default:
-							logger.debug("fail");
+							
 							result = "fail";
 							break;
 						}
 					} else { // Device API (장비에서 호출 되는 API)
 						// device_protocol_date 컬럼과 device_protocol_type컬럼을 갱신한다.
 						// String strType = (String) request.get("type");
-						logger.debug("장비22222222222" + "ClientAccessLogService.TYPE_UNKOWN_ACCESS_LOG" + ClientAccessLogService.TYPE_UNKOWN_ACCESS_LOG +
-								 "strType" + strType + "Encryptions.remakeMac(mac, true)" + Encryptions.remakeMac(mac, true) +  "fromDevice");
+						//logger.debug("장비22222222222" + "ClientAccessLogService.TYPE_UNKOWN_ACCESS_LOG" + ClientAccessLogService.TYPE_UNKOWN_ACCESS_LOG + "strType" + strType + "Encryptions.remakeMac(mac, true)" + Encryptions.remakeMac(mac, true) +  "fromDevice");
 						result = clientAccessLogService.insert_update_ClientAccessLogTbl(
 								ClientAccessLogService.TYPE_UNKOWN_ACCESS_LOG, strType,
 								Encryptions.remakeMac(mac, true), "fromDevice") > 0 ? "success" : "updateOk_InsertNo";
@@ -3661,9 +3996,204 @@ public class ApiController {
 		return "fail";
 	}
 
+	
+	  public String KTTDDNS_SERVICENO_TO_OTPLIST(Map<String, Object> request, Map<String, Object> response) {
+		 	@SuppressWarnings("unchecked")
+			final ArrayList<String> serviceNoList = (ArrayList<String>) request.get("serviceNoList");
+			
+			final Boolean ignoreOTPCondition = request.containsKey("ignoreOTP")
+					? Boolean.valueOf(request.get("ignoreOTP").toString())
+					: Boolean.FALSE;
+	
+			if (serviceNoList == null) {
+				return "fail";
+			}
+			if (serviceNoList.size() == 0) {
+				List<Map<String, Object>> deviceList = new ArrayList<>();
+				response.put("deviceList", deviceList);
+				deviceList = null;
+				return "success";
+			}
+			
+			StringBuffer serviceNoListString = new StringBuffer(1024);
+			try {
+				for (String serviceNo : serviceNoList) {
+					if (serviceNo.length() > 7) {
+
+						serviceNoListString.append("'");
+						serviceNoListString.append(serviceNo);
+						serviceNoListString.append("',");
+					}
+				}
+				serviceNoListString.delete(serviceNoListString.toString().length() - 1,
+						serviceNoListString.toString().length());
+
+				if (serviceNoListString.toString().length() == 0) {
+					List<Map<String, Object>> deviceList = new ArrayList<>();
+					response.put("deviceList", deviceList);
+					deviceList = null;
+					return "success";
+				}
+			} catch (Exception e) {
+				if (logger.isDebugEnabled())
+					e.printStackTrace();
+			}
+			
+			// List<Map<String, Object>> deviceListOrg =
+			// apiService.selectDeviceWhereInServicenoForApp(serviceNoListString);
+			// System.out.println(serviceNoListString);
+			/// HISTORY 추가 - selectDeviceWhereInServicenoForApp 수행 기록을 서버에 남기기 위하여 해당 필드에
+			// WITH구문을 추가하여 쿼리를 다중으로 처리하도록 함.
+			List<Map<String, Object>> deviceListOrg = apiService.selectDeviceMacWhereInServicenoOTP(serviceNoListString.toString());
+			// 위 기능을 위하여 해당 함수도 일부 수정
+
+			/*
+			 * 이전 코드 oty_yn을 확인하지 않는 코드 final List<Map<String, Object>> deviceList = new
+			 * ArrayList<>(); for(Map<String, Object> deviceItem : deviceListOrg) { int
+			 * domainType = (int) deviceItem.get("domainType"); int otp_yn = (int)
+			 * deviceItem.get("otp_yn"); if (domainType == 20 || (int) domainType == 21)
+			 * continue; // 2022-11-30일 전에는 아래 조건 판단이 없이 리스트를 전달하였음. if (otp_yn <= 0 ||
+			 * otp_yn > 3) // otp_yn : 사용안함(0), 기존사용자(1) , 관리자 변경 (2) , 인증 완료(3) //
+			 * continue;
+			 * 
+			 * deviceList.add(deviceItem); } for (Map<String, Object> deviceItem :
+			 * deviceList) { String noColonMac = (String) deviceItem.get("macAddress");
+			 * deviceItem.put("masterKey",
+			 * Encryptions.encryptMasterkey(Encryptions.getSHA(noColonMac + "KTT_MASTER",
+			 * 1))); }
+			 */
+			// 변경 코드 otp_yn을 확인하는 코드
+			if (deviceListOrg != null) {
+				final List<Map<String, Object>> deviceList = new ArrayList<>();
+				deviceListOrg.parallelStream().forEach(deviceItem -> {
+
+					if (deviceItem != null && deviceItem.containsKey("domainType")) {
+						int domainType = (int) deviceItem.get("domainType");
+						if ((domainType == 22 || domainType == 23)) // 'octdvr.co.kr' 20 'octnvr.co.kr' 21
+						{
+							int otp_yn = deviceItem.containsKey("otp_yn") ? (int) deviceItem.get("otp_yn") : 0;
+							//int service_open = deviceItem.containsKey("service_open") ? (int) deviceItem.get("service_open") : 0;
+							int service_user = deviceItem.containsKey("service_user") ? (int) deviceItem.get("service_user") : 0;
+							int register_type = deviceItem.containsKey("register_type") ? (int) deviceItem.get("register_type"): -1;
 	/*
-	 * public String KTTDDNS_SERVICENO_TO_OTPLIST(Map<String, Object> request,
-	 * Map<String, Object> response) {
+							//Boolean b = (otp_yn > 0 && otp_yn <= 3) || ignoreOTPCondition; // OTP YN CHECK
+							b = b || (service_open >= 2
+									&& (register_type == 0 || register_type == 1 || register_type == 2));// resister_type
+							if (b) {
+							*/
+									// Case1. “OTP_YN”컬럼의 값이 1이인 경우  1,2,3인 경우,  Case2. register_type이 0~2이면서 “service_open = 2” 이상인 장비 
+									//service_open =  0 개통 안됨 , service_open =  1 장비 개통 처리, service_open =  2 OSS 개통 처리
+
+								//if (register_type == 0 || register_type == 1 || register_type == 2) {
+								 
+							
+							if( otp_yn > 0 && otp_yn <= 3 )	 
+								 {
+								 StringBuffer noColonMac = new StringBuffer();
+					      		if (deviceItem.containsKey("macAddress")) 
+					      		{
+					                // String noColonMac = (String) deviceItem.get("macAddress");
+					                noColonMac.append(String.valueOf(deviceItem.get("macAddress"))).append("KTT_MASTER");
+					                deviceItem.put("masterKey", Encryptions.encryptMasterkey(Encryptions.getSHA(noColonMac.toString(), 1)));
+					              } else 
+					              {
+					                deviceItem.put("masterKey", "");
+					              }
+								 
+								 if (deviceItem.containsKey("DeviceVer")) 
+								 {
+									 String strDeviceVer = String.valueOf(deviceItem.get("DeviceVer")); //Devicever:FWversion
+									 int tDeviceVer = apiService.verString2Int(strDeviceVer);
+									 if (tDeviceVer != 0 && tDeviceVer >= apiService.verString2Int("V3.2.0")) 
+									 {
+										 deviceItem.put("otp_batch_authentication_avaiable", true);
+										//logger.info(tDeviceVer + "000000000");
+									 } 
+									 else 
+									 {
+										// FROM DB 웹페이지 model 버전
+										int tDeviceOtpAvailableVer = deviceItem.containsKey("last_ver") ? apiService.verString2Int(deviceItem.get("last_ver").toString()) : -1;
+										//logger.info("tDeviceOtpAvailableVer : " + tDeviceOtpAvailableVer);
+										if (tDeviceVer != 0 && tDeviceOtpAvailableVer > -1) 
+										{
+											deviceItem.put("otp_batch_authentication_avaiable", true);
+										} 
+										else 
+										{
+											deviceItem.put("otp_batch_authentication_avaiable", false);
+
+										}
+									}
+								}
+								
+								
+								/*
+								if (deviceItem.containsKey("macAddress")) {
+									// String noColonMac = (String) deviceItem.get("macAddress");
+									noColonMac.append(String.valueOf(deviceItem.get("macAddress"))).append("KTT_MASTER");
+									deviceItem.put("masterKey",
+											Encryptions.encryptMasterkey(Encryptions.getSHA(noColonMac.toString(), 1)));
+								} else {
+									deviceItem.put("masterKey", "");
+
+								if (deviceItem.containsKey("DeviceVer")) {
+									String strDeviceVer = String.valueOf(deviceItem.get("DeviceVer"));
+									int tDeviceVer = apiService.verString2Int(strDeviceVer);
+									if (tDeviceVer != 0 && tDeviceVer >= apiService.verString2Int("V3.2.0")) {
+										deviceItem.put("otp_batch_authentication_avaiable", true);
+									} else {
+										// FROM DB
+										int tDeviceOtpAvailableVer = deviceItem.containsKey("last_ver")
+												? apiService.verString2Int(deviceItem.get("last_ver").toString())
+												: -1;
+
+										if (tDeviceVer != 0 && tDeviceOtpAvailableVer > -1) {
+											deviceItem.put("otp_batch_authentication_avaiable", true);
+
+
+										} else {
+											deviceItem.put("otp_batch_authentication_avaiable", false);
+
+										}
+										/*
+										 * String strModelName = deviceItem.containsKey("modelName") ?
+										 * deviceItem.get("modelName").toString(): ""; if(tDeviceVer != 0 &&
+										 * strModelName.length() > 0){IniEditor manual_notice_list = new IniEditor();
+										 * RequestAttributes requestAttributes =
+										 * RequestContextHolder.getRequestAttributes(); HttpServletRequest
+										 * httpServletRequest = ((ServletRequestAttributes)
+										 * requestAttributes).getRequest(); String OTP_B_A_INI =
+										 * httpServletRequest.getServletContext().getRealPath("opt_b_a.ini");
+										 * System.out.println("otp_batch_authentication_avaiable" + OTP_B_A_INI); File
+										 * file = new File(OTP_B_A_INI); if(file.exists()) {try
+										 * {manual_notice_list.load(file); String fwAvailbleVer =
+										 * manual_notice_list.get(strModelName, "fwver"); if(fwAvailbleVer.length()>0 &&
+										 * tDeviceVer >= apiService.verString2Int(fwAvailbleVer.trim()))
+										 * {deviceItem.put("otp_batch_authentication_avaiable", true);} } catch
+										 * (IOException e) {deviceItem.put("otp_batch_authentication_avaiable", false);}
+										 * }else{deviceItem.put("otp_batch_authentication_avaiable", true);}} else
+										 * {deviceItem.put("otp_batch_authentication_avaiable", false);}
+										 
+									}
+								}*/
+								deviceList.add(deviceItem);
+								noColonMac = null;
+							}
+						}
+					}
+				});
+
+				response.put("deviceList", deviceList);
+			} else {
+				response.put("deviceList", new ArrayList<>());
+			}
+			// serviceNoListString = null;
+			// deviceList = null;
+
+			return "success";
+	  }
+	  
+	 /*
 	 * 
 	 * @SuppressWarnings("unchecked") String phone =
 	 * String.valueOf(request.get("phone")) ; ArrayList<String> serviceNoList =
@@ -3904,6 +4434,286 @@ public class ApiController {
 			}
 			return "success";
 		}
+		
+		public String KTTDDNS_WEAK_PASSWORD_TO_DEVICE(Map<String, Object> request, Map<String, Object> response) {
+			String macAddress = (String) request.get("macAddress");
+			Integer insecure_pw = 0;
+			if (macAddress == null)
+			{
+				return "fail";
+			}
+				
+			String apiMac = Encryptions.remakeMac(macAddress, false);
+			if (apiMac.length() != 12)
+			{
+				return "fail";
+			}	
+			String ddnsMac = Encryptions.remakeMac(macAddress, true);
+
+			if (!apiService.updateDeviceWeakpasswordWhereMac(ddnsMac)) // web_policy =1 추가
+			{
+				return "fail";
+			}
+				
+			return "success";
+		}
+		
+		
+		
+		
+		public String KTTDDNS_WHITE_LIST_IP_ADDRESS(Map<String, Object> request, Map<String, Object> response) {
+			String macAddress = (String) request.get("macAddress");
+			try {
+				if (macAddress == null) {
+					return "fail";
+				}
+
+				String apiMac = Encryptions.remakeMac(macAddress, false);
+				if (apiMac.length() != 12) {
+					return "fail";
+				}
+
+				String ddnsMac = Encryptions.remakeMac(macAddress, true);
+				logger.debug("ddnsMac : " + ddnsMac);
+				
+				List<Map<String, Object>> map = null;
+				HttpServletRequest httpServletRequest = ((ServletRequestAttributes)RequestContextHolder.currentRequestAttributes()).getRequest();
+				String clientIp = this.apiService.getIp(httpServletRequest);
+			    String serverIp = this.apiService.selectDevicePublicIpWhereMac(ddnsMac);
+			    
+
+			     logger.debug("clientIp : " + clientIp);
+			     logger.debug("serverIp : " + serverIp);
+
+			    
+				if (request.containsKey("white_ip")) {
+					String ip = request.get("white_ip").toString().trim();
+
+					Matcher m1 = this.VALID_IPV4_PATTERN.matcher(ip);
+					Matcher m12 = this.VALID_IPV6_PATTERN1.matcher(ip);
+					Matcher m22 = this.VALID_IPV6_PATTERN2.matcher(ip);
+
+					if (m1.matches() == true || (m12.matches() != false || m22.matches() != false)) {
+						map = apiService.selectDevicePublicIpWhereMac(ddnsMac, ip, 0);
+					}
+				} else {
+					map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
+				}
+								
+				logger.info("serverIp : " + serverIp);
+				logger.info("clientIp : " + clientIp);
+				if (!clientIp.equals(serverIp))
+				{
+				      return "nomatchip"; 
+				}
+
+				List<WhiteListIp> whiteListIpList = whiteListIpService.selectWhiteListIp();
+				ArrayList<String> addwhiteListIpList = new ArrayList<String>();
+				
+
+				for (int i = 0; i < whiteListIpList.size(); i++) 
+				{
+					//logger.info(whiteListIpList.get(i).ip_address());
+					addwhiteListIpList.add(whiteListIpList.get(i).ip_address());
+				}
+				
+				response.put("whiteListIpList", addwhiteListIpList);
+			
+				
+				return "success";
+			} catch (Exception e) {
+				response.clear();
+				return "fail";
+			}
+		}
+		 
+		public String KTTDDNS_DEVICE_TO_WHITE_LIST_IP_ADDRESS(Map<String, Object> request, Map<String, Object> response) {
+			@SuppressWarnings("unchecked")
+
+			ArrayList<String> serviceNoList = (ArrayList<String>) request.get("serviceNoList");
+			//String phone = String.valueOf(request.get("phone"));
+			String macAddress = (String) request.get("macAddress");
+			 logger.debug("macAddress :" + macAddress);
+			if (serviceNoList == null || macAddress == null) {
+				return "fail";
+			}
+			if (serviceNoList.size() == 0) {
+				List<Map<String, Object>> deviceList = new ArrayList<>();
+				response.put("deviceList", deviceList);
+				deviceList = null;
+				return "success";
+			}
+
+			
+			StringBuffer serviceNoListString = new StringBuffer(1024);
+			try {
+				for (String serviceNo : serviceNoList) {
+					if (serviceNo.length() > 7) {
+						serviceNoListString.append("'");
+						serviceNoListString.append(serviceNo);
+						serviceNoListString.append("',");
+					}
+					else
+					{
+						return "fail";
+					}
+				}
+				// 마지막 ,(쉼표)제거
+				serviceNoListString.delete(serviceNoListString.toString().length() - 1,
+						serviceNoListString.toString().length());
+
+				if (serviceNoListString.toString().length() == 0) {
+					List<Map<String, Object>> deviceList = new ArrayList<>();
+					response.put("macList", deviceList);
+					deviceList = null;
+					return "success";
+				}
+			} catch (Exception e) {
+				if (logger.isDebugEnabled())
+					e.printStackTrace();
+			}
+			
+			String apiMac = Encryptions.remakeMac(macAddress, false);
+			if (apiMac.length() != 12) {
+				return "fail";
+			}
+
+			String ddnsMac = Encryptions.remakeMac(macAddress, true);
+			logger.debug("ddnsMac : " + ddnsMac);
+			
+			List<Map<String, Object>> map = null;
+			HttpServletRequest httpServletRequest = ((ServletRequestAttributes)RequestContextHolder.currentRequestAttributes()).getRequest();
+			String clientIp = this.apiService.getIp(httpServletRequest);
+		    String serverIp = this.apiService.selectDevicePublicIpWhereMac(ddnsMac);
+		    
+		     logger.debug("clientIp : " + clientIp);
+		     logger.debug("serverIp : " + serverIp);
+
+			if (request.containsKey("white_ip")) {
+				String ip = request.get("white_ip").toString().trim();
+
+				Matcher m1 = this.VALID_IPV4_PATTERN.matcher(ip);
+				Matcher m12 = this.VALID_IPV6_PATTERN1.matcher(ip);
+				Matcher m22 = this.VALID_IPV6_PATTERN2.matcher(ip);
+
+				if (m1.matches() == true || (m12.matches() != false || m22.matches() != false)) {
+					map = apiService.selectDevicePublicIpWhereMac(ddnsMac, ip, 0);
+				}
+			} else {
+				map = apiService.selectDevicePublicIpWhereMac(ddnsMac, "127.0.0.1", 0);
+			}
+							
+			logger.info("serverIp : " + serverIp);
+			logger.info("clientIp : " + clientIp);
+			if (!clientIp.equals(serverIp))
+			{
+			      return "nomatchip"; 
+			}
+			
+				List<WhiteListIp> whiteListIpList = whiteListIpService.selectDeviceMacWhereWhiteListIp();
+				ArrayList<String> addwhiteListIpList = new ArrayList<String>();
+				
+
+				for (int i = 0; i < whiteListIpList.size(); i++) 
+				{
+					//logger.info(whiteListIpList.get(i).ip_address());
+					addwhiteListIpList.add(whiteListIpList.get(i).ip_address());
+				}
+				
+				response.put("whiteListIpList", addwhiteListIpList);
+			
+				
+				return "success";
+			} 
+		
+		/*
+		public String KTTDDNS_DEVICE_TO_INSERT_WHITE_IP_ADDRESS(Map<String, Object> request, Map<String, Object> response) {
+			String macAddress = (String) request.get("macAddress");
+			String serviceNo = (String) request.get("serviceNo");
+			 logger.debug("macAddress : " + macAddress);
+		     logger.debug("serviceNo : " + serviceNo);
+		     
+			try {
+				if (macAddress == null || serviceNo == null) {
+					return "fail";
+				}
+
+				String apiMac = Encryptions.remakeMac(macAddress, false);
+				if (apiMac.length() != 12) {
+					return "fail";
+				}
+
+				String ddnsMac = Encryptions.remakeMac(macAddress, true);
+				logger.debug("ddnsMac : " + ddnsMac);
+				
+	
+				String ip_address = "";
+			 if (!whiteListIpService.insertDeviceWhiteListIp(ddnsMac, serviceNo, ip_address))
+					
+					{
+						return "fail";
+					}
+					
+				return "success";
+			} catch (Exception e) {
+				response.clear();
+				return "fail";
+			}
+		}
+		
+		*/
+		
+		public String KTTDDNS_DEVICE_TO_INSERT_WHITE_IP_ADDRESS(Map<String, Object> request, Map<String, Object> response) {
+			String macAddress = (String) request.get("macAddress");
+			String ip_address = (String) request.get("ip_address");		
+			if (macAddress == null)
+			{
+				return "fail";
+			}
+				
+			String apiMac = Encryptions.remakeMac(macAddress, false);
+			if (apiMac.length() != 12)
+			{
+				return "fail";
+			}	
+			String ddnsMac = Encryptions.remakeMac(macAddress, true);
+			
+			if (!whiteListIpService.insertDeviceWhiteListIp(ddnsMac, ip_address))
+			{
+				return "fail";
+			}			
+			return "success";
+		}
+		
+		
+		/*
+		
+		
+		public String KTTDDNS_WHITE_LIST_IP_ADDRESS(Map<String, Object> request, Map<String, Object> response) {
+			String macAddress = (String) request.get("macAddress");
+			Integer insecure_pw = 0;
+			if (macAddress == null)
+			{
+				return "fail";
+			}
+				
+			String apiMac = Encryptions.remakeMac(macAddress, false);
+			if (apiMac.length() != 12)
+			{
+				return "fail";
+			}	
+			String ddnsMac = Encryptions.remakeMac(macAddress, true);
+
+			if (!apiService.selectDeviceP2pWhereMac2(ddnsMac)) // web_policy =1 추가
+			{
+				return "fail";
+			}			
+			return "success";
+		}
+		*/
+		
+		
+		
 		
 	/**
 	 * 
@@ -4297,7 +5107,9 @@ public class ApiController {
 			Matcher m1 = this.VALID_IPV4_PATTERN.matcher(ip);
 			Matcher m12 = this.VALID_IPV6_PATTERN1.matcher(ip);
 			Matcher m22 = this.VALID_IPV6_PATTERN2.matcher(ip);
+			logger.info("ip :" + ip);
 			if (m1.matches() == false && (m12.matches() == false && m22.matches() == false)) {
+				logger.info("ip :" + (m1.matches() == false && (m12.matches() == false && m22.matches() == false)));
 				response.put("ip", ip);
 				result = "fail";
 			} else {
@@ -4312,6 +5124,7 @@ public class ApiController {
 						log.append("MAC_ADDRESS : ").append(macAddress).append(" IP : ").append(ip);
 						logger.debug(log.toString());
 						Boolean bIP_ValidCheck = apiService.insertCheckIPValidation(macAddress, ip, log.toString());
+						logger.info("bIP_ValidCheck :" + bIP_ValidCheck);
 						if (bIP_ValidCheck == true) {
 							if (ipList != null && ipList.size() > 0) {
 								AtomicInteger ordinal = new AtomicInteger(0);

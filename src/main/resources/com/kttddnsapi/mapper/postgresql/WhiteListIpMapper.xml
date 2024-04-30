@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.kttddnsapi.dao.WhiteListIpDao">
+
+	<select id="selectWhiteListIp" resultType="whiteListIp">	
+		select ip_address as ip_address from white_list_ip;
+	</select>
+
+	<select id="selectDeviceMacWhereWhiteListIp" resultType="whiteListIp">	
+		SELECT * FROM device_white_list_ip
+	</select>
+	
+	<insert id="insertDeviceWhiteListIp" parameterType="map">
+		INSERT INTO device_white_list_ip (mac_Address, ip_address) VALUES (#{mac_Address}, #{ip_address})
+	</insert>
+	
+</mapper>

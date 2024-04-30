@@ -5,11 +5,14 @@ import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 
+import com.kttddnsapi.model.Commodity;
+
 @Mapper
 public interface ApiDao
 {
 	public int insertDevice(Map<String, Object> map);
-
+	
+	
 	public int updateDeviceServiceopenWhereMac(String mac);
 	public int updateDeviceServicenoWhereMac(Map<String, Object> map);
 	 
@@ -21,7 +24,9 @@ public interface ApiDao
 	public int update_users_service_access_rule(Map<String,Object>map);
 	
 	public int updateUserOTP_YN(Map<String, Object> map);
+	public int updateOtpBatchAll(Map<String, Object> map);
 	
+	public int updateDeviceWeakpasswordWhereMac(String mac);
 	public int deleteDeviceWhereSysid(String sysid);
 	public int deleteDeviceWhereDomain(String domain);
 	public int deleteDeviceWhereMac(String mac);
@@ -30,8 +35,8 @@ public interface ApiDao
 	public List<Map<String, Object>> selectDeviceWhereServicenoForOss(String serviceNo);
 
 	public List<Map<String, Object>> selectDeviceInSysidForDeviceinfo2(Map<String, Object> map);
+	public List<Map<String, Object>> selectDeviceMacWhereInServicenoOTP(Map<String, Object> map);
 	public List<Map<String, Object>> selectDeviceWhereInServicenoForApp(Map<String, Object> map);
-
 	public List<Map<String, Object>> selectDeviceInSysidForDeviceinfo3(Map<String, Object> map);
 	public List<Map<String, Object>> selectDeviceWhereInServicenoForCs(Map<String, Object> map);
 
@@ -41,6 +46,7 @@ public interface ApiDao
 	public String selectDevicePublicIpWhereMac(String mac);
 	public String selectDevicePublicIpWhereMac_accessrule(String mac);
 
+	
 	public List<Map<String, Object>> selectDevicePublicIpWhereMacByMap(Map<String,Object> mac);
 	public List<Map<String, Object>> selectDevicePublicIpWhereMacWithAccessRule(String mac);
 	public List<Map<String, Object>> selectDeviceWhereSysid(Map<String, Object> map);
@@ -68,6 +74,8 @@ public interface ApiDao
 	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP(Map<String, Object> map);
 	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP1Hour(Map<String, Object> map);	
 	
+	public List<ApiDao> selectDeviceWhereWhiteIp();	
+
 	public List<Map<String, Object>> selectDeviceWhereInPhone(Map<String, Object> map);
 	
 	public List<Map<String, Object>> selectDeviceWhereServicenoCms(String serviceNo);

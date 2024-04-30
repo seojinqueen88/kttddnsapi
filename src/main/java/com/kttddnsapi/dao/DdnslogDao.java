@@ -10,5 +10,6 @@ public interface DdnslogDao
 {
 	public int insertDdnslog(Map<String, Object> map);
 	public int insertDdnslogPhone(Map<String, Object> map);	
+	public int insertDdnslogOtpType(Map<String, Object> map);	
 
 }

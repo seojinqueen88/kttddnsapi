@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.kttddnsapi.dao.ApiDao;
 import com.kttddnsapi.dao.P2pregisterDao;
+import com.kttddnsapi.model.Commodity;
 import com.kttddnsapi.model.P2pregister;
 import com.kttddnsapi.util.InstancePW_GEN_UTIL;
 
@@ -113,6 +114,21 @@ public class ApiService {
             return false;
 	}
 	
+	public boolean updateOtpBatchAll(String mac, Integer otp_batch_all) {
+		
+		Map<String, Object> map = new HashMap<>();
+		 
+		map.put("mac", mac);
+	     map.put("otp_batch_all", otp_batch_all);
+	        
+		if (apiDao.updateOtpBatchAll(map) > 0)
+			return true;
+		else
+			return false;
+	}
+
+	
+	
 	public boolean update_users_service_no_access_rule(String mac , Integer access_rule)
     {
         Map<String, Object> map = new HashMap<>();
@@ -121,7 +137,12 @@ public class ApiService {
         return apiDao.update_users_service_access_rule(map) > 0 ? true : false;
     }
 	
-	
+	public boolean updateDeviceWeakpasswordWhereMac(String mac) {
+		if (apiDao.updateDeviceWeakpasswordWhereMac(mac) > 0)
+			return true;
+		else
+			return false;
+	}
 	
 	public boolean deleteDeviceWhereSysid(String sysid) {
 		if (apiDao.deleteDeviceWhereSysid(sysid) > 0)
@@ -163,20 +184,35 @@ public class ApiService {
 	}
 	
 	
-	public List<Map<String, Object>> selectDeviceWhereInServicenoForApp(
-			String serviceNoListString) {
+	public List<Map<String, Object>> selectDeviceMacWhereInServicenoOTP(String serviceNoListString) {
 		Map<String, Object> map = new HashMap<>();
-		 
 		map.put("serviceNoListString", serviceNoListString);
-		///// selectDeviceWhereInServicenoForApp_new_version true로 설정 시 select 한 시점이 dB서버에 기록 됨.
-		///// false로 할 경우 이전과 같은 형태로 조회 됨.
-	 map.put("selectDeviceWhereInServicenoForApp_new_version",false);
-	  /// map.put("selectDeviceWhereInServicenoForApp_new_version",false);
-		/////
-		///System.out.println("selectDeviceWhereInServicenoForApp");
-		return apiDao.selectDeviceWhereInServicenoForApp(map);
+		return apiDao.selectDeviceMacWhereInServicenoOTP(map);
 	}
 
+	/*
+	 * 	public List<Map<String, Object>> selectDeviceWhereInServicenoForApp(
+				String serviceNoListString) {
+			Map<String, Object> map = new HashMap<>();
+			 
+			map.put("serviceNoListString", serviceNoListString);
+			///// selectDeviceWhereInServicenoForApp_new_version true로 설정 시 select 한 시점이 dB서버에 기록 됨.
+			///// false로 할 경우 이전과 같은 형태로 조회 됨.
+		 map.put("selectDeviceWhereInServicenoForApp_new_version",false);
+		  /// map.put("selectDeviceWhereInServicenoForApp_new_version",false);
+			/////
+			///System.out.println("selectDeviceWhereInServicenoForApp");
+			return apiDao.selectDeviceWhereInServicenoForApp(map);
+		}
+	 * 
+	 */
+	  
+	  public List<Map<String, Object>> selectDeviceWhereInServicenoForApp(String serviceNoListString) {
+	    Map<String, Object> map = new HashMap<>();
+	    map.put("serviceNoListString", serviceNoListString);
+	    return this.apiDao.selectDeviceWhereInServicenoForApp(map);
+	  }
+	
 	public List<String> updateAppStaistics(ArrayList <String> list,String app_name,Integer app_type)
 	{
 	  Map<String, Object> map = new HashMap<>();
@@ -231,6 +267,9 @@ public class ApiService {
 	public List<Map<String, Object>> selectDevicePublicIpWhereMacWithAccessRule(String mac) {
       return apiDao.selectDevicePublicIpWhereMacWithAccessRule(mac);
     }
+	
+	
+	
 	public List<Map<String, Object>> selectDevicePublicIpWhereMac(String mac,String white_ip,Integer service_open) {
 	  Map<String, Object> map = new HashMap<>();
       map.put("mac", mac);
@@ -366,6 +405,14 @@ public class ApiService {
 
 		return apiDao.selectDeviceMacWhereInServicenoPhoneOTP(map);
 	}
+	
+	
+	
+	public List<ApiDao> selectDeviceWhereWhiteIp()
+	{
+		return apiDao.selectDeviceWhereWhiteIp();
+	}
+	
 	
 	public List<Map<String, Object>> selectDeviceMacWhereInServicenoPhoneOTP1Hour(
 			String serviceNoListString, String phone) {

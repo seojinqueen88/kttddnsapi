@@ -43,4 +43,20 @@ public class DdnslogService
 	}
 
 	
+
+	public boolean insertDdnslogOtpType(String mac, String phone, String service_no,  int otp_batch_all, String msg)
+	{
+		Map<String, Object> map = new HashMap<>();
+		
+		map.put("mac", mac);
+		map.put("phone", phone);
+		map.put("service_no", service_no);
+		map.put("otp_batch_all", otp_batch_all);
+		map.put("message", msg);
+		if(ddnslogDao.insertDdnslogOtpType(map) > 0)
+			return true;
+		else
+			return false;
+	}
+
 }

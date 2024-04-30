@@ -83,6 +83,14 @@
 	]]>
 	</update>
 
+	<update id="updateOtpBatchAll" parameterType="map">
+		update users set otp_batch_all = #{otp_batch_all} where jumin = #{mac}
+	</update>
+
+
+	<update id="updateDeviceWeakpasswordWhereMac" parameterType="String">
+		update users set insecure_pw = 1 where jumin = #{mac} 
+	</update>
 
 	<delete id="deleteDeviceWhereSysid" parameterType="String">
 		delete from users where systemid = #{sysid}
@@ -106,11 +114,10 @@
 	<select id="selectDeviceInSysidForDeviceinfo2" parameterType="map" resultType="map">
 		select rtrim(systemid) as "sysid", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, upper(replace(rtrim(jumin), ':', '')) as "macAddress" from users where systemid in (${sysidStrings})
 	</select>
-	<select id="selectDeviceWhereInServicenoForApp" parameterType="map" resultType="map">
-	<choose>
-	 <when test="selectDeviceWhereInServicenoForApp_new_version != null and selectDeviceWhereInServicenoForApp_new_version == true">
+	
+	<select id="selectDeviceMacWhereInServicenoOTP" parameterType="map" resultType="map">
 	 WITH updated_log_call AS (
-    	update users set log_call_KTTDDNS_SERVICENO_TO_APP_DEVICEINFO = now() AT TIME ZONE 'KST'
+    	update users set log_call_kttddns_serviceno_to_otplist = now() AT TIME ZONE 'KST'
 	where service_user != 0 and service_no in (${serviceNoListString}) RETURNING jumin)
     select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as
 	"domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 
@@ -122,16 +129,13 @@
 	service_open as "service_open" , register_type as "register_type" ,empty3  as "DeviceVer" ,rtrim(empty2) as "modelName" ,
 	 b.fw_version as "last_ver"
 	from users as u left join models b on u.empty2 = b.model  , (select  jumin from updated_log_call ) as t where u.jumin = t.jumin ORDER BY domain ASC ,otp_yn DESC ;
-		</when>
-		<otherwise>
-		<!-- 
-			select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn" from users where service_user = 1 and otp_yn != 0 and service_no in (${serviceNoListString})
-		 -->
-			select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" , otp_yn as "otp_yn", service_open, service_user, register_type from users where service_open = 2 and otp_yn != 0 and service_no in (${serviceNoListString})
-		</otherwise>
-		</choose>
 	</select>
 
+	
+<select id="selectDeviceWhereInServicenoForApp" parameterType="map" resultType="map">
+		select service_no as "serviceNo", rtrim(domain) as "fullDomain", split_part(domain, '.', 1) as "domainName", case when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octdvr.co.kr' then 20 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'octnvr.co.kr' then 21 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopview.co.kr' then 22 when substring(domain, char_length(split_part(domain, '.', 1)) + 2) = 'telecopviewtest.co.kr' then 23 else 0 end as "domainType", rtrim(port) as port, p2p_uid as "p2pUid", p2p_priority as "p2pPriority", upper(replace(rtrim(jumin), ':', '')) as "macAddress" from users where service_user = 1 and service_no in (${serviceNoListString})
+	</select>
+	
 	<select id="selectDeviceInSysidForDeviceinfo3" parameterType="map" resultType="map">
 		select rtrim(systemid) as "sysid", rtrim(domain) as "fullDomain", rtrim(webport) as "webPort", rtrim(port) as "port", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(addr) as "IP", rtrim(empty2) as "modelName" from users where systemid in (${sysidStrings})
 	</select>
@@ -196,7 +200,7 @@
 	 WITH updated_last_access_master_key_time as  (
     	update users set last_access_master_key_time = now() AT TIME ZONE 'KST'
 		where jumin = #{mac} RETURNING jumin) 
-		select rtrim(addr) as "addr" ,access_rule as "access_rule", service_open as "service_open" 
+		select rtrim(addr) as "addr" , access_rule as "access_rule", service_open as "service_open" 
 		 from users, (select jumin from updated_last_access_master_key_time) as t where EXISTS(	
 		 select ip_address  from white_list_ip where 
 	 	<choose>
@@ -210,6 +214,7 @@
 		</choose>
 		)and t.jumin = users.jumin
 	</select>
+	
 	
 	<select id="selectDeviceWhereSysid" parameterType="map" resultType="map">
 		select rtrim(domain) as "fullDomain", rtrim(systemid) as "systemid", upper(replace(rtrim(jumin), ':', '')) as "macAddress", rtrim(webport) as webport from users where systemid like '${sysid}%'
@@ -289,7 +294,8 @@ REGEXP_REPLACE(replace(coalesce(empty3,''), '.', ''),'[[:alpha:]]','','g')  as "
 			 in(select distinct mac from ddnslog where service_no in (${serviceNoListString}) and phone not like '%OTP%' and phone = #{phone} and NOW()-interval'1 hour' > create_time );			 	 
 	
 	</select>
-		
+
+	
 	<select id="selectDeviceWhereInServicenoOTP" parameterType="map" resultType="map">
 		select a.service_no, upper(replace(rtrim(b.jumin), ':', '')) as mac, rtrim(b.empty2) as model, b.register_type, b.otp_yn, b.access_rule, b.maker, b.last_access_master_key_time, rtrim(b.empty3) as device_ver, c.fw_version as last_ver from service a left join users b on a.service_no = b.service_no left join models c on b.empty2 = c.model where a.service_no in (${serviceNoListString})
 	</select>
